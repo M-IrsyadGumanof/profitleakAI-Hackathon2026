@@ -604,22 +604,22 @@ export default function DashboardPage() {
       </div>
 
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-200 no-print">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => handleRequestExit("/upload")}
-            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
             title="Kembali & Unggah File Baru"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
                 Dashboard Audit Transaksi
               </h1>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                 Dual-Engine Detector
               </span>
             </div>
@@ -629,12 +629,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           {/* Tombol Unduh Laporan PDF */}
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
             title="Cetak atau Unduh Laporan Audit dalam format PDF"
           >
             <Download className="w-4 h-4" />
@@ -645,7 +645,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => handleRequestExit("/upload")}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors cursor-pointer"
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors cursor-pointer"
             title="Keluar dari analisis ini dan unggah file CSV baru"
           >
             <FileSpreadsheet className="w-4 h-4 text-slate-500" />
@@ -732,7 +732,7 @@ export default function DashboardPage() {
       />
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-6 no-print">
+      <div className="flex border-b border-slate-200 gap-4 sm:gap-6 no-print overflow-x-auto no-scrollbar whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab("overview")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
@@ -769,7 +769,7 @@ export default function DashboardPage() {
       {activeTab === "overview" && (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="lg:col-span-2 p-4 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -786,7 +786,7 @@ export default function DashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={auditRows}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+                      margin={{ top: 10, right: 10, left: -25, bottom: 20 }}
                     >
                       <XAxis
                         dataKey="line"
@@ -844,7 +844,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[11px] sm:text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded bg-[#1E40AF]"></span>
                     <span>Tarif Wajar (&le; {safeThreshold.toFixed(2)}x)</span>
@@ -857,7 +857,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="p-4 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
                   Pemicu Kebocoran (Dual-Detector)
@@ -937,12 +937,12 @@ export default function DashboardPage() {
 
       {/* TAB 2: AUDIT TABLE */}
       {activeTab === "table" && (
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="p-4 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                   statusFilter === "all"
                     ? "bg-slate-900 text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -952,17 +952,17 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setStatusFilter("leaks")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                   statusFilter === "leaks"
                     ? "bg-rose-600 text-white"
                     : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
                 }`}
               >
-                Hanya Bocor ({data.summary.leaks})
+                Bocor ({data.summary.leaks})
               </button>
               <button
                 onClick={() => setStatusFilter("normal")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                className={`flex-1 sm:flex-none justify-center px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors text-center ${
                   statusFilter === "normal"
                     ? "bg-emerald-600 text-white"
                     : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
@@ -1064,7 +1064,7 @@ export default function DashboardPage() {
       {/* TAB 3: SIMULATOR TRANSAKSI TUNGGAL */}
       {activeTab === "simulator" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-6">
+          <div className="lg:col-span-2 p-4 sm:p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-6">
             <div>
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -1254,7 +1254,7 @@ export default function DashboardPage() {
       {/* Modal Konfirmasi Keluar dari Dashboard */}
       {showExitModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 no-print">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />
@@ -1277,18 +1277,18 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
+            <div className="mt-6 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowExitModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-center"
               >
                 Tetap di Dashboard
               </button>
               <button
                 type="button"
                 onClick={handleConfirmExit}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer text-center"
               >
                 Ya, Keluar & Reset Sesi
               </button>

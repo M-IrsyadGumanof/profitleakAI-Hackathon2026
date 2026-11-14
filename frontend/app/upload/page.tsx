@@ -211,13 +211,13 @@ export default function UploadPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors"
+            className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
-            Unduh Template CSV
+            <span>Unduh Template CSV</span>
           </button>
         </div>
       </div>
@@ -246,7 +246,7 @@ export default function UploadPage() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative overflow-hidden border-2 border-dashed rounded-3xl min-h-[340px] sm:min-h-[380px] p-8 sm:p-12 text-center cursor-pointer flex flex-col items-center justify-center transition-all select-none ${
+        className={`relative overflow-hidden border-2 border-dashed rounded-3xl min-h-[290px] sm:min-h-[380px] p-6 sm:p-12 text-center cursor-pointer flex flex-col items-center justify-center transition-all select-none ${
           isDragging
             ? "border-sky-400 shadow-xl shadow-sky-500/20 scale-[1.005]"
             : file
@@ -325,7 +325,7 @@ export default function UploadPage() {
 
       {/* Preview Ringkasan File */}
       {file && csvPreview && (
-        <div className="p-6 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-md flex flex-col gap-4">
+        <div className="p-4 sm:p-6 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-md flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <FileText className="w-5 h-5 text-[#1E40AF]" />
@@ -352,7 +352,7 @@ export default function UploadPage() {
           </div>
 
           {/* Cuplikan Header CSV */}
-          <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 overflow-x-auto text-[11px] tabular-nums text-slate-600">
+          <div className="bg-slate-50/80 p-3 sm:p-3.5 rounded-xl border border-slate-200/80 overflow-x-auto text-[11px] tabular-nums text-slate-600">
             <div className="font-bold text-slate-800 mb-1">Cuplikan Baris Pertama:</div>
             {csvPreview.previewLines.map((line, idx) => (
               <div key={idx} className="whitespace-nowrap py-0.5">
@@ -362,20 +362,20 @@ export default function UploadPage() {
           </div>
 
           {/* Tombol Eksekusi Analisis */}
-          <div className="pt-2 flex justify-end gap-3">
+          <div className="pt-2 flex justify-end">
             <button
               onClick={handleSubmitAnalysis}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all disabled:opacity-50"
+              className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Menganalisis Transaksi...
+                  <span>Menganalisis Transaksi...</span>
                 </>
               ) : (
                 <>
-                  Mulai Analisis Transaksi
+                  <span>Mulai Analisis Transaksi</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -385,7 +385,7 @@ export default function UploadPage() {
       )}
 
       {/* Petunjuk Format Kolom */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs">
+      <div className="p-4 sm:p-7 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
           <HelpCircle className="w-4 h-4 text-[#1E40AF]" />
           Spesifikasi Format Kolom CSV

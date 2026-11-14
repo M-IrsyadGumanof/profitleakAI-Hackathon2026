@@ -103,7 +103,7 @@ export function QuickSimulator() {
         </div>
 
         {/* Preset Minimalis Tanpa Warna Ramai */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           <span className="text-xs text-slate-400 mr-1 hidden sm:inline">Uji Kasus:</span>
           <button
             onClick={() => loadPreset("leak")}

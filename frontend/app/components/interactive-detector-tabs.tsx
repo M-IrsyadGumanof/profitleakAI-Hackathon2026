@@ -12,7 +12,7 @@ export function InteractiveDetectorTabs() {
       <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/80 max-w-lg mx-auto shadow-xs">
         <button
           onClick={() => setActiveTab("rate")}
-          className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
             activeTab === "rate"
               ? "bg-[#1E40AF] text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
@@ -24,7 +24,7 @@ export function InteractiveDetectorTabs() {
 
         <button
           onClick={() => setActiveTab("margin")}
-          className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
             activeTab === "margin"
               ? "bg-[#1E40AF] text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
@@ -36,7 +36,7 @@ export function InteractiveDetectorTabs() {
 
         <button
           onClick={() => setActiveTab("synergy")}
-          className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ${
             activeTab === "synergy"
               ? "bg-[#1E40AF] text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"

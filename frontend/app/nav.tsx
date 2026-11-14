@@ -51,11 +51,12 @@ export function Navbar() {
   }, [pathname]);
 
   const navItems = [
-    { href: "/", label: "Beranda", icon: Home },
-    { href: "/upload", label: "Unggah Data", icon: UploadCloud },
+    { href: "/", label: "Beranda", shortLabel: "Beranda", icon: Home },
+    { href: "/upload", label: "Unggah Data", shortLabel: "Unggah", icon: UploadCloud },
     { 
       href: "/dashboard", 
       label: "Dashboard Analisis", 
+      shortLabel: "Audit",
       icon: hasData ? LayoutDashboard : Lock,
       locked: !hasData 
     },
@@ -110,8 +111,8 @@ export function Navbar() {
       <header
         className={`pointer-events-auto w-full flex items-center justify-between border backdrop-blur-md rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           isScrolled
-            ? "max-w-4xl h-12 sm:h-13 px-4 sm:px-6 bg-white/90 border-slate-200/90 shadow-lg shadow-slate-900/5"
-            : "max-w-7xl h-16 px-5 sm:px-8 bg-white/95 border-slate-200/80 shadow-xs"
+            ? "max-w-4xl h-12 px-3 sm:px-6 bg-white/90 border-slate-200/90 shadow-lg shadow-slate-900/5"
+            : "max-w-7xl h-14 sm:h-16 px-3.5 sm:px-8 bg-white/95 border-slate-200/80 shadow-xs"
         }`}
       >
         <div className="flex items-center justify-between w-full gap-2">
@@ -208,19 +209,20 @@ export function Navbar() {
                     } ${
                       isScrolled
                         ? "w-8 p-0"
-                        : "px-3.5 sm:px-4 text-xs"
+                        : "px-2.5 sm:px-4 text-[11px] sm:text-xs"
                     }`}
                   >
                     {/* Teks Label */}
                     <span
-                      className={`whitespace-nowrap transition-opacity duration-200 ease-in-out flex items-center gap-1.5 ${
+                      className={`whitespace-nowrap transition-opacity duration-200 ease-in-out flex items-center gap-1 sm:gap-1.5 ${
                         isScrolled
                           ? "opacity-0 pointer-events-none"
                           : "opacity-100"
                       }`}
                     >
-                      {item.locked && <Lock className="w-3 h-3 text-slate-400" />}
-                      <span>{item.label}</span>
+                      {item.locked && <Lock className="w-3 h-3 text-slate-400 shrink-0" />}
+                      <span className="hidden sm:inline">{item.label}</span>
+                      <span className="sm:hidden">{item.shortLabel}</span>
                     </span>
 
                     {/* Ikon Konteks SVG: Murni Fade In saat mengerucut */}
@@ -248,7 +250,7 @@ export function Navbar() {
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("trigger-download-pdf"));
                 }}
-                className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 select-none bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs cursor-pointer active:scale-95`}
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 select-none bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs cursor-pointer active:scale-95`}
                 title="Unduh Laporan Audit dalam format PDF"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -259,7 +261,7 @@ export function Navbar() {
               /* Tombol Mulai Audit CSV saat di halaman Beranda / Upload */
               <Link
                 href="/upload"
-                className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 select-none ${
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-semibold rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 select-none ${
                   isScrolled
                     ? "bg-[#1E40AF] hover:bg-[#1E3A8A] text-white shadow-xs"
                     : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-xs"
