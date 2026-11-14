@@ -2,7 +2,7 @@
 
 > **Disusun oleh:** Irsyad (Backend Engineer) & Galang (ML Engineer)  
 > **Didokumentasikan & Diverifikasi oleh:** Febri (QA & Docs Engineer)  
-> **Versi Backend/Model:** `v6` (Multi-Detector: Rate + Margin)  
+> **Versi Backend/Model:** `v6` (Multi-Detector + Google Gemini LLM Advice)  
 > **Base URL Lokal:** `http://localhost:8000`
 
 ---
@@ -10,12 +10,14 @@
 ## 1. Ringkasan Eksekutif & Cakupan Model (*Scope*)
 
 ProfitLeak AI mendeteksi **transaksi tidak ekonomis** dengan menggabungkan dua detektor:
-1. **Detektor Tarif (`rate`):** Menandai jika rasio tarif aktual terhadap tarif wajar $> \mathbf{3.09779}$.
-2. **Detektor Margin (`margin`):** Memprediksi apakah ongkir menyerap porsi besar dari harga jual ($\text{freight} / \text{price} > 0.5$, threshold probabilitas $\ge \mathbf{0.46}$).
+1. **Detektor Rasio Tarif (`rate`):** Menandai jika rasio tarif aktual terhadap tarif wajar $> \mathbf{3.09779}$.
+2. **Detektor Risiko Margin (`margin`):** Memprediksi apakah ongkir menyerap porsi besar dari harga jual ($\text{freight} / \text{price} > 0.5$, threshold probabilitas $\ge \mathbf{0.46}$).
+3. **Fitur Baru (Minta Saran AI - Google Gemini):** Menerjemahkan ringkasan analisis transaksi menjadi rekomendasi bahasa awam yang ringkas, hemat token, dan anti-halusinasi.
 
 > ⚠️ **Batasan Cakupan Model (Scope Honesty):**
 > * **Tercakup:** Anomali tarif ongkir aktual & rasio ongkir terhadap harga jual.
 > * **TIDAK Tercakup:** Harga modal / COGS / HPP, diskon / voucher / promo, margin laba bersih murni (karena dataset Olist tidak memuat kolom tersebut).
+> * **Prinsip AI:** Gemini dilarang membahas HPP/diskon dan dilarang membuat angka sendiri (rekomendasi harga dihitung oleh Python).
 
 ---
 
@@ -90,7 +92,7 @@ Input numerik diverifikasi terhadap rentang berikut. Pelanggaran batas ditolak d
 
 ### D. Deteksi Kebocoran Transaksi (Single)
 * **Method:** `POST` | **Path:** `/api/detect-leak`
-* **Request:**
+* **Request Body:**
 ```json
 {
   "weight_kg": 5.0,
@@ -134,8 +136,6 @@ Input numerik diverifikasi terhadap rentang berikut. Pelanggaran batas ditolak d
 * **Method:** `POST` | **Path:** `/api/upload-csv`
 * **Content-Type:** `multipart/form-data` (Field name: `file`)
 * **Format:** File `.csv` UTF-8 (maksimal 50.000 baris).
-* **Kolom Wajib:** `weight_kg`, `distance_km`, `volume_cm3`, `price`.
-* **Kolom Opsional:** `freight_value` atau `actual_rate`.
 * **Response (HTTP 200 OK):**
 ```json
 {
@@ -170,3 +170,70 @@ Input numerik diverifikasi terhadap rentang berikut. Pelanggaran batas ditolak d
   ]
 }
 ```
+
+---
+
+### F. Fitur Baru: Saran AI Bahasa Awam (Google Gemini)
+* **Method:** `POST` | **Path:** `/api/advice`
+* **Deskripsi:** Menerjemahkan ringkasan analisis menjadi rekomendasi aksi operasional bahasa awam.
+
+#### Request Body:
+```json
+{
+  "filename": "demo_ongkir_mahal.csv",
+  "threshold": 3.09779,
+  "summary": {
+    "total_rows": 10,
+    "analysed": 10,
+    "skipped": 0,
+    "leaks": 10,
+    "rate_leaks": 10,
+    "margin_risks": 0,
+    "estimated_loss": 813.44,
+    "leak_rate": 100.0
+  },
+  "rows": [
+    {
+      "line": 2,
+      "predicted_rate": 11.55,
+      "actual_rate": 55.0,
+      "ratio": 4.76,
+      "freight_ratio": 0.3438,
+      "is_leak": true,
+      "risk_score": 0.55,
+      "detectors": { "rate": true, "margin": false }
+    }
+  ]
+}
+```
+
+#### Response 200 OK:
+```json
+{
+  "source": "gemini",
+  "generated_at": "2026-11-14T10:00:00Z",
+  "headline": "Ongkir kamu rata-rata 5x lebih mahal dari wajar",
+  "ringkasan": "10 dari 10 transaksi membayar ongkir jauh di atas tarif wajar.",
+  "prioritas": [
+    {
+      "judul": "Negosiasi tarif ekspedisi",
+      "dampak": "Potensi hemat R$ 813",
+      "aksi": ["Minta daftar tarif resmi", "Bandingkan 2 ekspedisi alternatif"],
+      "terdampak": [2, 3, 4]
+    }
+  ],
+  "per_baris": [
+    {
+      "line": 2,
+      "masalah": "Ongkir 4.8x tarif wajar",
+      "saran_harga": "Naikkan harga minimal ke R$ 183.33"
+    }
+  ],
+  "catatan": "Saran AI, bukan nasihat keuangan. Model tidak mencakup HPP & diskon."
+}
+```
+
+*Perilaku Fallback:*
+* Bila `leaks === 0`: Menjawab statis seketika tanpa memanggil Gemini (*Zero Token*).
+* Bila `GEMINI_API_KEY` tidak diisi atau terjadi kegagalan jaringan: Mengembalikan respons dengan `source: "rule_based"` (HTTP 200, tidak pernah crash 500).
+* Bila payload salah: Menolak dengan **HTTP 400 Bad Request** `{"detail": "<pesan ramah>"}`.

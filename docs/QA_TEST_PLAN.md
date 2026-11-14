@@ -9,7 +9,8 @@
 1. Memastikan kedua detektor backend (`rate` dan `margin`) bekerja akurat sesuai ambang batas ($3.09779$ dan $0.46$).
 2. Memverifikasi kemampuan analisis batch file CSV multipart hingga batas baris wajar.
 3. Memastikan input di luar rentang validitas model menghasilkan respons penolakan **HTTP 400 Bad Request** dengan pesan ramah pengguna.
-4. Memverifikasi seluruh komponen frontend pendukung (`UploadDropzone`, `SummaryCard`, `RiskBadge`, `ReasonList`, `RecommendationPanel`, `EmptyState`, `ErrorBanner`) siap di-import oleh Ihqfal.
+4. Memverifikasi seluruh komponen frontend pendukung (`UploadDropzone`, `SummaryCard`, `RiskBadge`, `ReasonList`, `RecommendationPanel`, `AdvicePanel`, `EmptyState`, `ErrorBanner`) siap di-import oleh Ihqfal.
+5. Memverifikasi ketahanan fitur baru **Minta Saran AI** (`POST /api/advice`), optimasi zero token, dan mekanisme fallback `rule_based`.
 
 ---
 
@@ -27,6 +28,10 @@
 | **TC-08** | *Boundary Min*| `POST /api/detect-leak` | Batas bawah valid (`weight: 0.05, dist: 1.5, ...`) | Status `200 OK` (Diterima tanpa error) |
 | **TC-09** | *Boundary Max*| `POST /api/detect-leak` | Batas atas valid (`weight: 30.0, dist: 3135, ...`) | Status `200 OK` (Diterima tanpa error) |
 | **TC-10** | *Validation* | `POST /api/detect-leak` | Berat invalid (`weight: 0.01 kg`) | Status `400 Bad Request`, `detail` berupa string informatif |
+| **TC-11** | *AI Advice Leak* | `POST /api/advice` | Fixture `advice_ekstrem.csv` (9 kebocoran) | Status `200 OK`, `source: "gemini" / "rule_based"`, memuat `headline` & `ringkasan` |
+| **TC-12** | *AI Zero Token* | `POST /api/advice` | Fixture `advice_aman.csv` (`leaks: 0`) | Status `200 OK`, `source: "rule_based"` (langsung tanpa panggil LLM) |
+| **TC-13** | *AI Fallback* | `POST /api/advice` | Backend tanpa API Key / Error Eksternal | Status `200 OK` (Fallback aman `rule_based`, dilarang crash `500`) |
+| **TC-14** | *AI Invalid 400* | `POST /api/advice` | Payload rusak/tanpa summary & rows | Status `400 Bad Request` + detail pesan string |
 
 ---
 
