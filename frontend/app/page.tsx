@@ -33,7 +33,7 @@ export default function HomePage() {
             {/* Eyebrow Pill Badge (Neutral Semi-transparent) */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/75 backdrop-blur-md border border-slate-200/80 text-slate-800 text-xs font-semibold shadow-xs mb-6 select-none">
               <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
-              <span>Dual-Detector Logistics Margin Intelligence</span>
+              <span>Audit Finansial Logistik E-Commerce</span>
             </div>
 
             {/* Hero Headline */}
@@ -98,31 +98,7 @@ export default function HomePage() {
           <QuickSimulator />
         </section>
 
-        {/* 3. Verified Model Metrics Bar (Semi-Transparent Acrylic Cards) */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Basis Data Teruji</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">78.181</span>
-            <span className="text-xs text-slate-500 mt-0.5 block">Transaksi Riil E-Commerce</span>
-          </div>
-          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Akurasi Tarif Kurir</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">R² 73.49%</span>
-            <span className="text-xs text-slate-500 mt-0.5 block">HistGradientBoosting Regresi</span>
-          </div>
-          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Deteksi Risiko Margin</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">F1 85.94%</span>
-            <span className="text-xs text-slate-500 mt-0.5 block">Precision 88.9% • Recall 83.1%</span>
-          </div>
-          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mata Uang Acuan</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">BRL (R$)</span>
-            <span className="text-xs text-slate-500 mt-0.5 block">Real Brasil (Olist Dataset)</span>
-          </div>
-        </section>
-
-        {/* 4. Arsitektur Dual-Detector (Tab Interaktif & Komparasi) */}
+        {/* 3. Arsitektur Dual-Detector (Tab Interaktif & Komparasi) */}
         <section className="flex flex-col gap-8">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Arsitektur Cerdas</span>
@@ -137,7 +113,7 @@ export default function HomePage() {
           <InteractiveDetectorTabs />
         </section>
 
-        {/* 5. Alur Kerja 3 Langkah (Interactive Stepper) */}
+        {/* 4. Alur Kerja 3 Langkah (Interactive Stepper) */}
         <section className="flex flex-col gap-8">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Alur Kerja Cepat</span>
@@ -174,7 +150,7 @@ export default function HomePage() {
                   <ul className="text-xs text-slate-600 list-disc list-inside mt-2 space-y-1.5">
                     <li>Tarif ongkir aktual yang melebihi ambang batas wajar benchmark rute.</li>
                     <li>Transaksi tidak ekonomis di mana beban ongkir &gt; 50% harga barang.</li>
-                    <li>Kepadatan paket (<code className="bg-slate-100 px-1 py-0.2 rounded font-mono">density_g_cm3</code>) dan dimensi volumetrik.</li>
+                    <li>Kepadatan paket (<code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-800 font-semibold">density_g_cm3</code>) dan dimensi volumetrik.</li>
                   </ul>
                 </div>
 
@@ -209,29 +185,29 @@ export default function HomePage() {
           <InteractiveFAQ />
         </section>
 
-        {/* 8. Footer Call to Action Banner (Clean Slate Backdrop) */}
-        <section className="text-center py-12 px-6 rounded-3xl bg-slate-900/90 backdrop-blur-lg text-white border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#1E40AF]/20 rounded-full blur-3xl pointer-events-none" />
+        {/* 6. Footer Call to Action Banner (Corporate Navy & Titanium) */}
+        <section className="text-center py-12 px-6 rounded-3xl bg-gradient-to-br from-[#1E3A8A] via-[#1E40AF] to-[#0F172A] text-white border border-[#1E40AF]/40 shadow-xl shadow-blue-950/10 relative overflow-hidden flex flex-col items-center">
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#38BDF8]/15 rounded-full blur-3xl pointer-events-none" />
           
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight relative z-10">
             Siap Mengaudit Data Transaksi Logistik Anda?
           </h2>
-          <p className="text-sm sm:text-base text-slate-300 mt-3 max-w-xl relative z-10 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-200 mt-3 max-w-xl relative z-10 leading-relaxed">
             Unggah file CSV transaksi Anda atau gunakan dataset sampel 12 baris Olist untuk melihat mitigasi kebocoran profit secara langsung.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5 relative z-10">
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-semibold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-bold text-[#1E40AF] bg-white hover:bg-slate-100 active:bg-slate-200 rounded-xl shadow-md transition-all"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4 text-[#1E40AF]" />
               <span>Mulai Unggah CSV</span>
             </Link>
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:bg-white/25 border border-white/25 rounded-xl shadow-xs transition-colors backdrop-blur-xs"
             >
-              <Gauge className="w-4 h-4 text-slate-400" />
+              <Gauge className="w-4 h-4 text-sky-200" />
               <span>Buka Dashboard Demo</span>
             </Link>
           </div>

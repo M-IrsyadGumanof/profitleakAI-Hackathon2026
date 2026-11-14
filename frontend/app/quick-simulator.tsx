@@ -136,7 +136,7 @@ export function QuickSimulator() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-700">Jarak Pengiriman</label>
-              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+              <span className="font-bold tabular-nums text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                 {distanceKm} km
               </span>
             </div>
@@ -155,7 +155,7 @@ export function QuickSimulator() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-700">Berat Paket</label>
-              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+              <span className="font-bold tabular-nums text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                 {weightKg.toFixed(1)} kg
               </span>
             </div>
@@ -174,7 +174,7 @@ export function QuickSimulator() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-700">Dimensi Kubik</label>
-              <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+              <span className="font-bold tabular-nums text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                 {volumeCm3.toLocaleString("id-ID")} cm³
               </span>
             </div>
@@ -202,7 +202,7 @@ export function QuickSimulator() {
                   step="5"
                   value={price}
                   onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))}
-                  className="w-full font-mono font-bold text-sm bg-white border border-slate-200 rounded-md px-2 py-1 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#1E40AF]"
+                  className="w-full font-bold tabular-nums text-sm bg-white border border-slate-200 rounded-md px-2 py-1 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#1E40AF]"
                 />
               </div>
             </div>
@@ -218,7 +218,7 @@ export function QuickSimulator() {
                   step="2"
                   value={actualFreight}
                   onChange={(e) => setActualFreight(Math.max(1, Number(e.target.value)))}
-                  className="w-full font-mono font-bold text-sm bg-white border border-slate-200 rounded-md px-2 py-1 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#1E40AF]"
+                  className="w-full font-bold tabular-nums text-sm bg-white border border-slate-200 rounded-md px-2 py-1 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#1E40AF]"
                 />
               </div>
             </div>
@@ -250,13 +250,13 @@ export function QuickSimulator() {
             <div className="grid grid-cols-2 gap-2.5">
               <div className="p-3 bg-white/90 rounded-xl border border-slate-200/70">
                 <span className="text-[10px] text-slate-500 font-medium block">Tarif Wajar AI</span>
-                <span className="text-base font-bold font-mono text-[#1E40AF] mt-0.5 block">
+                <span className="text-base font-bold tabular-nums text-[#1E40AF] mt-0.5 block">
                   R$ {calculation.fairFreight.toFixed(2)}
                 </span>
               </div>
               <div className="p-3 bg-white/90 rounded-xl border border-slate-200/70">
                 <span className="text-[10px] text-slate-500 font-medium block">Tarif Ditagih</span>
-                <span className="text-base font-bold font-mono text-slate-800 mt-0.5 block">
+                <span className="text-base font-bold tabular-nums text-slate-800 mt-0.5 block">
                   R$ {actualFreight.toFixed(2)}
                 </span>
               </div>
@@ -266,13 +266,13 @@ export function QuickSimulator() {
             <div className="p-3 bg-white/90 rounded-xl border border-slate-200/70 space-y-2 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Rasio Tarif Kurir</span>
-                <span className={`font-mono font-bold ${calculation.isRateExceedsFair ? "text-rose-600" : "text-slate-900"}`}>
+                <span className={`font-bold tabular-nums ${calculation.isRateExceedsFair ? "text-rose-600" : "text-slate-900"}`}>
                   {calculation.rateRatio}x
                 </span>
               </div>
               <div className="flex justify-between items-center pt-1.5 border-t border-slate-100">
                 <span className="text-slate-600">Beban Ongkir ke Harga</span>
-                <span className={`font-mono font-bold ${calculation.isFreightEatsMargin ? "text-rose-600" : "text-slate-900"}`}>
+                <span className={`font-bold tabular-nums ${calculation.isFreightEatsMargin ? "text-rose-600" : "text-slate-900"}`}>
                   {calculation.marginRatio}%
                 </span>
               </div>

@@ -110,7 +110,7 @@ export function InteractiveWorkflow() {
 
             {/* Table Preview */}
             <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white/60">
-              <table className="w-full text-xs font-mono text-left">
+              <table className="w-full text-xs tabular-nums text-left">
                 <thead className="bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-bold">
                   <tr>
                     <th className="px-4 py-2.5">weight_kg</th>
@@ -168,17 +168,17 @@ export function InteractiveWorkflow() {
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Menghitung kurva non-linier antara jarak, kepadatan volumetrik, dan berat paket untuk mematok ambang batas kewajaran ongkir.
                 </p>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-700">
+                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
                   Ambang: Rasio Tarif &gt; 3.0978x
                 </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-white/80 border border-slate-200/70 space-y-1.5">
-                <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">Mesin 2: Klasifikasi Risiko Margin</span>
+                <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider block">Mesin 2: Klasifikasi Risiko Margin</span>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   Menganalisis probabilitas apakah beban ongkir menyerap porsi berlebih dari harga produk hingga menimbulkan kerugian operasional.
                 </p>
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-700">
+                <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
                   Ambang: Probabilitas &ge; 46% (Beban &gt; 50%)
                 </div>
               </div>

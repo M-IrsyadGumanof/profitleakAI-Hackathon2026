@@ -83,32 +83,32 @@ export function InteractiveDetectorTabs() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900/90 text-white space-y-3 border border-slate-800 shadow-inner backdrop-blur-xs">
-              <span className="text-xs font-mono text-[#38BDF8] font-bold uppercase tracking-wider block">
+            <div className="lg:col-span-5 p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3.5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1E40AF] block">
                 Simulasi Kasus Riil
               </span>
-              <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700/80 space-y-2 text-xs font-mono">
-                <div className="flex justify-between text-slate-300">
+              <div className="p-3.5 bg-white/90 rounded-xl border border-slate-200/70 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-500">
                   <span>Jarak 150 km • Berat 0.8 kg</span>
                   <span className="text-slate-400">Dimensi 3.200 cm³</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-1">
-                  <span className="text-slate-400">Prediksi Tarif Wajar:</span>
-                  <span className="text-sm font-bold text-slate-100">R$ 14.20</span>
+                  <span className="text-slate-500">Prediksi Tarif Wajar:</span>
+                  <span className="text-sm font-bold text-slate-800">R$ 14.20</span>
                 </div>
                 <div className="flex justify-between items-baseline">
-                  <span className="text-slate-400">Tarif Ditagihkan:</span>
-                  <span className="text-base font-bold text-slate-100">R$ 48.50</span>
+                  <span className="text-slate-500">Tarif Ditagihkan:</span>
+                  <span className="text-base font-bold text-slate-900">R$ 48.50</span>
                 </div>
-                <div className="pt-2 border-t border-slate-700 flex justify-between items-center">
-                  <span className="text-slate-300">Rasio Tarif:</span>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 font-bold border border-white/10">
+                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                  <span className="text-slate-600">Rasio Tarif:</span>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-800 font-bold shadow-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                     <span>3.42x (Bocor Tarif)</span>
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Rekomendasi: Re-negosiasi kontrak kurir rute terkait atau alihkan ke ekspedisi regional alternatif.
               </p>
             </div>
@@ -149,32 +149,32 @@ export function InteractiveDetectorTabs() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900/90 text-white space-y-3 border border-slate-800 shadow-inner backdrop-blur-xs">
-              <span className="text-xs font-mono text-[#38BDF8] font-bold uppercase tracking-wider block">
+            <div className="lg:col-span-5 p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3.5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1E40AF] block">
                 Simulasi Kasus Riil
               </span>
-              <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700/80 space-y-2 text-xs font-mono">
-                <div className="flex justify-between text-slate-300">
+              <div className="p-3.5 bg-white/90 rounded-xl border border-slate-200/70 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-500">
                   <span>Produk: Aksesoris HP</span>
                   <span className="text-slate-400">Jarak 980 km</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-1">
-                  <span className="text-slate-400">Harga Jual:</span>
-                  <span className="text-sm font-bold text-slate-100">R$ 22.00</span>
+                  <span className="text-slate-500">Harga Jual:</span>
+                  <span className="text-sm font-bold text-slate-800">R$ 22.00</span>
                 </div>
                 <div className="flex justify-between items-baseline">
-                  <span className="text-slate-400">Ongkir Ditagihkan:</span>
-                  <span className="text-base font-bold text-slate-100">R$ 31.50</span>
+                  <span className="text-slate-500">Ongkir Ditagihkan:</span>
+                  <span className="text-base font-bold text-slate-900">R$ 31.50</span>
                 </div>
-                <div className="pt-2 border-t border-slate-700 flex justify-between items-center">
-                  <span className="text-slate-300">Penyerapan:</span>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/10 text-slate-200 font-bold border border-white/10">
+                <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                  <span className="text-slate-600">Penyerapan:</span>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-800 font-bold shadow-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                     <span>143.2% (Tidak Ekonomis)</span>
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
                 Rekomendasi: Terapkan paket bundling atau aturan minimum belanja untuk membagi beban ongkir.
               </p>
             </div>
@@ -218,33 +218,37 @@ export function InteractiveDetectorTabs() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900/90 text-white space-y-3 border border-slate-800 shadow-inner backdrop-blur-xs">
-              <span className="text-xs font-mono text-[#38BDF8] font-bold uppercase tracking-wider block">
+            <div className="lg:col-span-5 p-5 sm:p-6 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3.5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1E40AF] block">
                 Matriks 4 Status Transaksi
               </span>
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-slate-200 flex items-start gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-sky-400 mt-1 shrink-0" />
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 rounded-xl bg-white border border-slate-200/80 text-slate-700 flex items-start gap-2 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#1E40AF] mt-1 shrink-0" />
                   <div>
-                    <strong>Kuadran 1:</strong><br />Aman & Ekonomis
+                    <strong className="text-slate-900 font-bold block text-xs">Kuadran 1:</strong>
+                    <span className="text-slate-500 text-[11px]">Aman & Ekonomis</span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-slate-200 flex items-start gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 mt-1 shrink-0" />
+                <div className="p-3 rounded-xl bg-white border border-slate-200/80 text-slate-700 flex items-start gap-2 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
                   <div>
-                    <strong>Kuadran 2:</strong><br />Margin Tergerus
+                    <strong className="text-slate-900 font-bold block text-xs">Kuadran 2:</strong>
+                    <span className="text-slate-500 text-[11px]">Margin Tergerus</span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-slate-200 flex items-start gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-400 mt-1 shrink-0" />
+                <div className="p-3 rounded-xl bg-white border border-slate-200/80 text-slate-700 flex items-start gap-2 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 mt-1 shrink-0" />
                   <div>
-                    <strong>Kuadran 3:</strong><br />Tarif Mahal
+                    <strong className="text-slate-900 font-bold block text-xs">Kuadran 3:</strong>
+                    <span className="text-slate-500 text-[11px]">Tarif Mahal</span>
                   </div>
                 </div>
-                <div className="p-2.5 rounded-lg bg-white/10 border border-white/10 text-slate-200 flex items-start gap-1.5">
+                <div className="p-3 rounded-xl bg-white border border-slate-200/80 text-slate-700 flex items-start gap-2 shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-rose-600 mt-1 shrink-0" />
                   <div>
-                    <strong>Kuadran 4:</strong><br />Kritis Ganda
+                    <strong className="text-slate-900 font-bold block text-xs">Kuadran 4:</strong>
+                    <span className="text-slate-500 text-[11px]">Kritis Ganda</span>
                   </div>
                 </div>
               </div>

@@ -82,6 +82,7 @@
 :root {
   color-scheme: light;
   --font-sans: 'MiSans Latin', system-ui, -apple-system, sans-serif;
+  --font-mono: 'MiSans Latin', system-ui, -apple-system, sans-serif;
   --background: #f8fafc;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -111,6 +112,7 @@
 
 @theme inline {
   --font-sans: 'MiSans Latin', system-ui, -apple-system, sans-serif;
+  --font-mono: 'MiSans Latin', system-ui, -apple-system, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -132,8 +134,13 @@
   --color-ring: var(--ring);
 }
 
-html, body, button, input, select, textarea {
+*, *::before, *::after, html, body, button, input, select, textarea, code, pre, kbd, samp {
   font-family: 'MiSans Latin', system-ui, -apple-system, sans-serif !important;
+}
+
+.font-mono {
+  font-family: 'MiSans Latin', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'tnum' 1;
 }
 
 body {
