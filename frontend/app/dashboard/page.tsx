@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { AdvicePanel } from "../components/AdvicePanel";
+import { CopilotWidget } from "../components/CopilotWidget";
 import { getAdvice } from "../lib/api";
 import type { AdviceResponse } from "../lib/types";
 import { 
@@ -316,6 +317,25 @@ function readStoredAnalysis(): { data: AnalysisData; hasStoredResult: boolean } 
   return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
 }
 
+function readStoredAdvice(filename?: string): AdviceResponse | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const storedAdvice = sessionStorage.getItem("profitleak_advice");
+    const storedFilename = sessionStorage.getItem("profitleak_advice_filename");
+    const currentFilename = filename || "transaksi.csv";
+
+    if (storedAdvice && storedFilename === currentFilename) {
+      const parsed = JSON.parse(storedAdvice);
+      if (parsed && (parsed.headline || parsed.ringkasan)) {
+        return parsed as AdviceResponse;
+      }
+    }
+  } catch {
+    // Abaikan jika storage kosong atau corrupt
+  }
+  return null;
+}
+
 export default function DashboardPage() {
   const [initial] = useState(readStoredAnalysis);
   const [data] = useState<AnalysisData>(initial.data);
@@ -409,25 +429,10 @@ export default function DashboardPage() {
   };
 
   // State Rekomendasi Saran AI (Google Gemini LLM / Rule-Based Fallback)
-  // Sesuai perancangan/pembagian_tugas_gemini.txt bagian Ihqfal
-  const [advice, setAdvice] = useState<AdviceResponse | null>(null);
+  // Diinisialisasi langsung dari sessionStorage sesuai nama file aktif
+  const [advice, setAdvice] = useState<AdviceResponse | null>(() => readStoredAdvice(data.filename));
   const [adviceLoading, setAdviceLoading] = useState<boolean>(false);
   const [adviceError, setAdviceError] = useState<string | null>(null);
-
-  // Pulihkan hasil saran AI dari sessionStorage jika sudah ada (agar tidak hilang saat navigasi/tab switch)
-  useEffect(() => {
-    try {
-      const storedAdvice = sessionStorage.getItem("profitleak_advice");
-      if (storedAdvice) {
-        const parsed = JSON.parse(storedAdvice);
-        if (parsed && (parsed.headline || parsed.ringkasan)) {
-          setAdvice(parsed);
-        }
-      }
-    } catch {
-      // Abaikan jika storage kosong atau JSON corrupt
-    }
-  }, []);
 
   // Handler Permintaan Saran AI (dipanggil saat tombol diklik atau retry)
   const handleFetchAdvice = async () => {
@@ -462,6 +467,7 @@ export default function DashboardPage() {
       setAdvice(result);
       try {
         sessionStorage.setItem("profitleak_advice", JSON.stringify(result));
+        sessionStorage.setItem("profitleak_advice_filename", data.filename || "transaksi.csv");
       } catch {
         // Abaikan jika kuota storage penuh
       }
@@ -1128,6 +1134,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Floating AI Logistics Copilot Widget */}
+      <CopilotWidget
+        summary={data.summary}
+        rows={auditRows}
+        filename={data.filename}
+      />
     </div>
   );
 }

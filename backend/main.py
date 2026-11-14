@@ -1446,3 +1446,161 @@ async def advice(payload: AdviceRequest, request: Request) -> dict[str, Any]:
 
     _advice_cache_put(cache_key, result)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Endpoint AI Copilot Chat: POST /api/copilot-chat
+# ---------------------------------------------------------------------------
+
+class ChatHistoryItem(BaseModel):
+    role: str  # "user" | "model"
+    content: str
+
+
+class CopilotChatRequest(BaseModel):
+    message: str
+    history: list[ChatHistoryItem] = []
+    summary: dict[str, Any] = {}
+    rows: list[dict[str, Any]] = []
+    filename: str = ""
+
+
+class CopilotChatResponse(BaseModel):
+    reply: str
+    source: str
+
+
+def _copilot_rule_based_reply(
+    message: str, summary: dict[str, Any], rows: list[dict[str, Any]]
+) -> str:
+    msg = message.lower()
+    leaks = summary.get("leaks", 0)
+    loss = float(summary.get("estimated_loss", 0.0))
+    analysed = summary.get("analysed", 0)
+
+    if any(k in msg for k in ("komplain", "email", "surat", "draf", "draft", "klaim")):
+        return (
+            "Berikut draf pesan resmi untuk negosiasi atau komplain ke pihak ekspedisi:\n\n"
+            "**Subjek:** Permohonan Rekonsiliasi & Peninjauan Tarif Pengiriman - Temuan Audit\n\n"
+            "Yth. Tim Kemitraan & Operasional Logistik,\n\n"
+            "Sehubungan dengan audit berkala pengiriman toko kami, sistem ProfitLeak AI mendeteksi "
+            f"adanya selisih ongkir yang signifikan pada beberapa nomor transaksi dengan total kelebihan biaya "
+            f"mencapai **R$ {loss:.2f}**.\n\n"
+            "Beberapa transaksi tercatat dikenakan tarif hingga di atas 2.5x batas wajar pasar. "
+            "Kami memohon agar pihak ekspedisi dapat meninjau kembali skema tarif dan mempertimbangkan "
+            "restitusi atau diskon kemitraan untuk pengiriman selanjutnya.\n\n"
+            "Terima kasih atas perhatian dan kerja samanya.\n\n"
+            "*Hormat kami,*\n*Tim Operasional Toko*"
+        )
+    elif any(k in msg for k in ("boros", "terburuk", "termahal", "parah", "bocor")):
+        leak_rows = [r for r in rows if r.get("is_leak")]
+        if leak_rows:
+            worst = max(leak_rows, key=lambda x: float(x.get("ratio", 0)))
+            return (
+                f"Transaksi dengan kebocoran paling tinggi ada pada **Baris #{worst.get('line', '?')}**:\n\n"
+                f"- **Tarif Aktual Kurir:** R$ {float(worst.get('actual_rate', 0)):.2f}\n"
+                f"- **Estimasi Tarif Wajar:** R$ {float(worst.get('predicted_rate', 0)):.2f}\n"
+                f"- **Rasio Selisih:** {float(worst.get('ratio', 0)):.2f}x lebih mahal\n"
+                f"- **Beban Ongkir:** Menyerap {float(worst.get('freight_ratio', 0)) * 100:.1f}% dari harga jual produk.\n\n"
+                "**Saran Aksi:** Prioritaskan negosiasi rute ini dengan ekspedisi atau tawarkan paket bundling agar margin keuntungan tidak tekor."
+            )
+    return (
+        f"Berdasarkan analisis audit saat ini, terdapat **{leaks} dari {analysed} transaksi** yang terindikasi "
+        f"mengalami kebocoran ongkir dengan potensi kerugian sebesar **R$ {loss:.2f}**.\n\n"
+        "**3 Rekomendasi Utama:**\n"
+        "1. **Audit Rute Jarak Jauh:** Negosiasi ulang kontrak pada transaksi dengan rasio selisih > 1.5x.\n"
+        "2. **Strategi Bundling:** Untuk barang murah dengan ongkir tinggi, wajibkan pembelian minimal 2 item.\n"
+        "3. **Kemasan Ramping:** Perkecil dimensi kardus untuk menghindari tarif volumetrik ekspedisi."
+    )
+
+
+async def _copilot_call_gemini(
+    message: str,
+    history: list[ChatHistoryItem],
+    context_str: str,
+) -> str | None:
+    if not GEMINI_API_KEY:
+        return None
+
+    system_text = (
+        "Anda adalah 'ProfitLeak AI Copilot', konsultan ahli logistik dan audit profit e-commerce.\n"
+        "Tugas Anda: membantu pengguna memahami hasil audit kebocoran ongkir, menganalisis baris transaksi, "
+        "merumuskan rekomendasi mitigasi bisnis (bundling, harga minimal, optimasi kemasan), "
+        "dan menyusun draf surat komplain/negosiasi ke pihak ekspedisi bila diminta.\n\n"
+        "DATA KONTEKS AUDIT SAAT INI:\n"
+        f"{context_str}\n\n"
+        "PANDUAN RESPON:\n"
+        "1. Jawab dalam Bahasa Indonesia yang profesional, ramah, dan solutif.\n"
+        "2. Gunakan data kontekstual yang diberikan. DILARANG mengarang angka baru yang tidak ada.\n"
+        "3. Format teks menggunakan Markdown (gunakan bold, bullet points, atau kutipan) agar rapi dan enak dibaca.\n"
+        "4. Berikan jawaban yang padat, terstruktur, dan actionable."
+    )
+
+    contents = []
+    for h in history[-6:]:
+        role = "user" if h.role == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": h.content}]})
+
+    contents.append({"role": "user", "parts": [{"text": message}]})
+
+    body = {
+        "system_instruction": {"parts": [{"text": system_text}]},
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 1000,
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            resp = await client.post(
+                GEMINI_URL,
+                params={"key": GEMINI_API_KEY},
+                json=body,
+            )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        candidate = (data.get("candidates") or [{}])[0]
+        text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
+        return text if text else None
+    except Exception:
+        return None
+
+
+@app.post("/api/copilot-chat", response_model=CopilotChatResponse)
+async def copilot_chat(payload: CopilotChatRequest) -> CopilotChatResponse:
+    """Chatbot Copilot interaktif yang memegang konteks data audit."""
+    summary = payload.summary or {}
+    leak_rows = [r for r in payload.rows if r.get("is_leak")]
+    leak_rows.sort(key=lambda r: float(r.get("ratio", 0)), reverse=True)
+    top_rows = leak_rows[:5]
+
+    context_str = json.dumps(
+        {
+            "file": payload.filename,
+            "ringkasan_audit": summary,
+            "transaksi_bocor_terburuk": top_rows,
+        },
+        ensure_ascii=False,
+        indent=2,
+    )
+
+    gemini_reply = await _copilot_call_gemini(
+        payload.message, payload.history, context_str
+    )
+    if gemini_reply:
+        return CopilotChatResponse(reply=gemini_reply, source="gemini")
+
+    fallback_reply = _copilot_rule_based_reply(
+        payload.message, summary, payload.rows
+    )
+    return CopilotChatResponse(reply=fallback_reply, source="rule_based")
+
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+

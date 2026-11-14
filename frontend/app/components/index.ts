@@ -11,3 +11,4 @@ export * from "./RecommendationPanel";
 export * from "./EmptyState";
 export * from "./ErrorBanner";
 export * from "./AdvicePanel";
+export * from "./CopilotWidget";

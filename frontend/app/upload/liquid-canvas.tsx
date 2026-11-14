@@ -309,7 +309,7 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     let mouseVelY = 0;
     let hoverValue = 0;
     let lastEventTime = performance.now();
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = dropzone.getBoundingClientRect();

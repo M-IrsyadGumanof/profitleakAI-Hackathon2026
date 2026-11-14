@@ -537,3 +537,48 @@ export async function getAdvice(
     throw new Error(`Gagal memanggil endpoint /api/advice: ${msg}`);
   }
 }
+
+/**
+ * AI Logistics Copilot Chat
+ * POST /api/copilot-chat
+ */
+export async function copilotChat(payload: {
+  message: string;
+  history?: { role: string; content: string }[];
+  summary?: unknown;
+  rows?: unknown[];
+  filename?: string;
+}): Promise<{ reply: string; source: string }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/copilot-chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => null);
+      const detail =
+        errorBody && typeof errorBody.detail === "string"
+          ? errorBody.detail
+          : `HTTP error ${res.status}`;
+      throw new Error(detail);
+    }
+
+    return await res.json();
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Respon AI melebihi batas waktu 30 detik. Silakan coba lagi.");
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Gagal menghubungi AI Copilot: ${msg}`);
+  }
+}
+

@@ -176,6 +176,9 @@ export default function UploadPage() {
 
       const result = await response.json();
       sessionStorage.setItem("profitleak_analysis_result", JSON.stringify(result));
+      // Hapus cache saran AI lama agar dashboard me-refresh tombol saran untuk file baru
+      sessionStorage.removeItem("profitleak_advice");
+      sessionStorage.removeItem("profitleak_advice_filename");
       router.push("/dashboard");
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
