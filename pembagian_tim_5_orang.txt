@@ -1,0 +1,691 @@
+========================================================================
+ PEMBAGIAN TUGAS TIM 5 ORANG - PROFITLEAK AI
+ Projek  : Deteksi Transaksi Tidak Ekonomis (berbasis harga jual & ongkir)
+ Sumber  : model/profitleak_final_model_v5.pkl + info JSON (versi v6)
+ Cakupan : SELURUH SIKLUS PROJECT (dari awal sampai web selesai)
+ Diperbarui: setelah training ulang v6 & backend multi-detektor selesai
+------------------------------------------------------------------------
+ ANGGOTA TIM
+  - Irsyad   -> Backend / API Engineer + Training Model   (branch: irsyad)
+  - Galang   -> ML / Data Engineer (Verifikasi & Dataset) (branch: galang)
+  - Ihqfal   -> Frontend UI Engineer                      (branch: ihqfal)
+  - Suhafdal -> Frontend Integration Engineer             (branch: suhafdal)
+  - Febri    -> QA + Docs + FE Support                    (branch: febri)
+------------------------------------------------------------------------
+ BACA DULU - PERUBAHAN PENTING DARI RENCANA AWAL
+  1. Model sudah dilatih ulang menjadi v6. Artefak tetap bernama sama
+     (profitleak_final_model_v5.pkl / _info_v5.json) supaya tidak bentrok,
+     TAPI isinya v6 dengan DUA detektor, bukan satu.
+  2. Training v6 DIKERJAKAN IRSYAD (lihat Bagian 3). Galang berperan
+     sebagai verifikator independen, pemilik notebook, dan penyedia
+     dataset uji/fixture. Pembagian ini disepakati agar tidak tumpang
+     tindih pekerjaan.
+  3. Cakupan model DISEMPITKAN secara jujur: hanya harga jual & ongkir.
+     Modal/COGS dan diskon TIDAK tercakup karena dataset Olist tidak
+     memiliki kolom tersebut.
+------------------------------------------------------------------------
+ PRINSIP KERJA
+  1. SEMUA anggota menulis kode (tidak ada yang hanya dokumen/tester).
+  2. Demo dilakukan BERSAMA-SAMA oleh tim.
+  3. Setiap orang punya file/folder milik sendiri -> tidak ada bentrok.
+  4. Titik temu hanya SATU: KONTRAK DATA/API (Bagian 4).
+  5. 1 orang = 1 branch = 1 area file.
+------------------------------------------------------------------------
+ URUTAN ALUR (SIAPA MULAI DULU)
+  (1) Irsyad + Galang  -> KONTRAK DATA/API            [SELESAI]
+        |
+        v
+  (2) SEMUA -> kerja PARALEL di branch masing2        [BERJALAN]
+        |
+        v
+  (3) Suhafdal         -> INTEGRASI UI <-> backend
+        |
+        v
+  (4) Febri            -> QA menyeluruh
+        |
+        v
+  (5) SEMUA            -> demo + merge develop -> main
+========================================================================
+
+
+========================================================================
+1. PETA BRANCH (RENCANA KETENTUAN)
+========================================================================
+Catatan: Pembuatan branch dilakukan oleh tim sendiri.
+
++-----+--------------------------+----------+----------------------------+
+| No  | Nama Branch              | Pemilik  | Boleh Ubah File Apa        |
++-----+--------------------------+----------+----------------------------+
+| 1   | main                     | Bersama  | TIDAK ADA commit langsung; |
+|     |                          |          | hanya menerima merge dari  |
+|     |                          |          | develop                    |
++-----+--------------------------+----------+----------------------------+
+| 2   | develop                  | Bersama  | Integrasi; menerima merge  |
+|     |                          |          | dari branch feat/*         |
++-----+--------------------------+----------+----------------------------+
+| 3   | irsyad                   | Irsyad   | backend/main.py            |
+|     |                          |          | backend/requirements.txt   |
+|     |                          |          | train_v6.py                |
++-----+--------------------------+----------+----------------------------+
+| 4   | galang                   | Galang   | model/ (pkl + info JSON)   |
+|     |                          |          | *.ipynb (notebook)         |
+|     |                          |          | fixtures/ (dataset uji)    |
++-----+--------------------------+----------+----------------------------+
+| 5   | ihqfal                   | Ihqfal   | frontend/app/page.tsx      |
+|     |                          |          | frontend/app/upload/       |
+|     |                          |          | frontend/app/dashboard/    |
+|     |                          |          | frontend/app/layout.tsx    |
+|     |                          |          | frontend/app/globals.css   |
++-----+--------------------------+----------+----------------------------+
+| 6   | suhafdal                 | Suhafdal | frontend/app/lib/api.ts    |
+|     |                          |          | frontend/app/lib/types.ts  |
+|     |                          |          | frontend/.env.local        |
++-----+--------------------------+----------+----------------------------+
+| 7   | febri                    | Febri    | frontend/app/components/   |
+|     |                          |          | frontend/scripts/          |
+|     |                          |          | README / docs              |
++-----+--------------------------+----------+----------------------------+
+
+CATATAN BRANCH: branch tim yang sudah ada bernama `irsyad`, `galang`,
+`ihqfal`, `suhafdal`, `febri` (tanpa prefix `feat/`). Pakai yang sudah
+ada agar tidak duplikat.
+
+
+========================================================================
+1B. ALUR MERGE & ATURAN BRANCH
+========================================================================
+Alur:   <nama>  -->  develop  -->  main
+  - Branch pribadi di-merge ke develop setelah review antar anggota.
+  - develop di-merge ke main hanya saat stabil / siap demo.
+  - DILARANG commit/merge langsung ke main.
+
+Aturan:
+  1. Satu orang hanya bekerja di branch pribadinya.
+  2. Satu branch = satu area file (lihat Peta Branch).
+  3. Jika perlu menyentuh file orang lain: minta izin + sepakati dulu.
+  4. Perubahan format data/API HANYA lewat pembaruan KONTRAK (Bagian 4),
+     disepakati semua (khususnya Irsyad + Galang).
+  5. Commit kecil & sering; sebutkan area yang disentuh.
+  6. Sebelum PR/merge ke develop: pastikan tidak mengubah file di luar
+     area milikmu.
+
+
+========================================================================
+2. RINGKASAN PERAN & AREA KODE (ANTI-BENTROK)
+========================================================================
+
++-----------+-------------------------------+---------------------------+
+| Nama      | Peran                         | Area Kode Eksklusif       |
++-----------+-------------------------------+---------------------------+
+| Irsyad    | Backend/API + Training Model  | backend/main.py           |
+|           |                               | backend/requirements.txt  |
+|           |                               | train_v6.py               |
++-----------+-------------------------------+---------------------------+
+| Galang    | ML/Data: Verifikasi & Dataset | model/ (pkl, json info)   |
+|           |                               | *.ipynb                   |
+|           |                               | fixtures/                 |
++-----------+-------------------------------+---------------------------+
+| Ihqfal    | Frontend UI Engineer          | frontend/app/page.tsx     |
+|           |                               | frontend/app/upload/      |
+|           |                               | frontend/app/dashboard/   |
+|           |                               | frontend/app/layout.tsx   |
+|           |                               | frontend/app/globals.css  |
++-----------+-------------------------------+---------------------------+
+| Suhafdal  | Frontend Integration Engineer | frontend/app/lib/api.ts   |
+|           |                               | frontend/app/lib/types.ts |
+|           |                               | frontend/.env.local       |
++-----------+-------------------------------+---------------------------+
+| Febri     | QA + Docs + FE Support        | frontend/app/components/  |
+|           |                               | frontend/scripts/         |
+|           |                               | README / docs             |
++-----------+-------------------------------+---------------------------+
+
+Aturan: TIDAK seorang pun mengedit file milik orang lain tanpa izin
+        pemiliknya + kesepakatan kontrak (Bagian 4).
+
+
+========================================================================
+3. STATUS PENGERJAAN SAAT INI (PER BAGIAN)
+========================================================================
+
++------------------+------------------------------------------+-----------+
+| Bagian           | Isi                                      | Status    |
++------------------+------------------------------------------+-----------+
+| Backend / API    | 4 endpoint + upload CSV + validasi       | SELESAI   |
+| Training model   | v6, 2 detektor, R2 0.7349                | SELESAI   |
+| Kontrak API      | Bagian 4 dokumen ini                     | SELESAI   |
+| Fixture/dataset  | CSV contoh untuk demo & QA               | BELUM     |
+| Frontend UI      | 3 halaman (home, upload, dashboard)      | BELUM     |
+| Integrasi UI-API | api.ts, types.ts, upload multipart       | BELUM     |
+| QA & Docs        | README, skrip uji, laporan QA            | BELUM     |
++------------------+------------------------------------------+-----------+
+
+Artinya: backend & model SUDAH BISA DIPAKAI. Frontend & QA menyusul.
+
+
+========================================================================
+4. DETAIL PER ORANG
+========================================================================
+
+
+------------------------------------------------------------------------
+ IRSYAD - BACKEND / API ENGINEER + TRAINING MODEL
+ Branch milik: irsyad
+ File milik : backend/main.py, backend/requirements.txt, train_v6.py
+------------------------------------------------------------------------
+Tujuan:
+  Menyediakan API FastAPI yang melayani frontend, menjalankan model v6,
+  serta bertanggung jawab atas proses training ulang model.
+
+STATUS: SELESAI (lihat rincian di bawah untuk pemeliharaan)
+
+Tugas yang sudah dikerjakan:
+  1. Setup FastAPI + CORS untuk origin frontend
+     (http://localhost:3000 & http://127.0.0.1:3000).
+  2. Endpoint GET /api/health.
+  3. Endpoint GET /api/model-info (metadata + scope cakupan model).
+  4. Endpoint POST /api/predict (prediksi tarif ongkir wajar).
+  5. Endpoint POST /api/detect-leak (2 detektor + reasons + risk_score).
+  6. Endpoint POST /api/upload-csv (analisis batch dari file CSV).
+  7. Model di-load SATU KALI saat startup lewat FastAPI lifespan
+     (bukan per request), path dinamis berbasis lokasi file.
+  8. Guard kompatibilitas fitur: backend menolak start jika jumlah fitur
+     model tidak cocok (mencegah crash misterius).
+  9. Validasi input terhadap valid_ranges -> HTTP 400 dengan
+     {"detail": "<pesan ramah>"} (bukan 422).
+ 10. Training ulang model v6 lewat train_v6.py (lihat Bagian 5).
+ 11. requirements.txt sinkron dengan dependency yang dipakai.
+
+Tugas lanjutan (pemeliharaan):
+  a. Menjaga endpoint tetap sesuai KONTRAK (Bagian 4) saat frontend minta
+     penyesuaian; koordinasi dengan Suhafdal.
+  b. Membantu Febri saat QA menemukan masalah backend.
+  c. Jika Galang menemukan kejanggalan model saat audit, tindak lanjuti
+     di train_v6.py lalu latih ulang.
+
+Deliverable:
+  - API berjalan: /api/health, /api/model-info, /api/predict,
+    /api/detect-leak, /api/upload-csv.
+  - Skrip training train_v6.py yang reproducible.
+
+Definition of Done: [TERPENUHI]
+  - Semua endpoint merespons via HTTP nyata (sudah diuji dengan uvicorn,
+    termasuk upload CSV multipart dan validasi 400).
+  - Model di-load sekali (bukan per request).
+  - Input di luar valid_ranges ditolak dengan 400 + pesan jelas.
+
+
+------------------------------------------------------------------------
+ GALANG - ML / DATA ENGINEER (VERIFIKASI, NOTEBOOK & DATASET)
+ Branch milik: galang
+ File milik : model/ (pkl + info JSON), *.ipynb, fixtures/
+------------------------------------------------------------------------
+Tujuan:
+  Menjadi verifikator independen atas model v6, memindahkan proses
+  training ke notebook agar reproducible, dan menyediakan dataset uji
+  (fixture) yang dipakai frontend, QA, dan demo.
+
+CATATAN KEPEMILIKAN (penting, agar tidak salah paham):
+  - Training v6 dikerjakan IRSYAD lewat train_v6.py.
+  - Folder model/ secara FORMAL dimiliki Galang: Galang yang menjaga
+    konsistensi artefak dan mendokumentasikannya.
+  - Galang TIDAK perlu melatih ulang dari nol. Tugas Galang adalah
+    memastikan model benar, terdokumentasi, dan punya data uji.
+
+Tugas Ngoding (menyeluruh):
+  1. AUDIT MODEL (verifikasi independen):
+     - Load model/profitleak_final_model_v5.pkl, pastikan bisa dipakai.
+     - Pastikan urutan fitur benar:
+       ['weight_kg', 'distance_km', 'volume_cm3', 'price_log',
+        'density_g_cm3'] dan price_log = log1p(price).
+     - Reproduksi metrik: R2 uji = 0.7349 (v5 lama: 0.7227).
+     - Cek threshold rasio = 3.09779 (bandingkan dengan file info JSON).
+     - Cek margin_proba_threshold = 0.46 untuk detektor margin.
+     - Laporkan jika ada angka yang tidak cocok dengan info JSON.
+  2. NOTEBOOK:
+     - Pindahkan alur train_v6.py ke Dataset_E_Commerce.ipynb agar bisa
+       dijalankan ulang langkah demi langkah (dataset: archive.zip).
+     - Beri penjelasan tiap sel: asal fitur, split 3 arah
+       (latih/validasi/uji), cara threshold ditentukan.
+  3. DATASET UJI / FIXTURE (paling dibutuhkan teman frontend):
+     - Buat folder fixtures/ berisi CSV contoh, misalnya:
+         fixtures/contoh_normal.csv      (transaksi sehat)
+         fixtures/contoh_ongkir_mahal.csv(ongkir >> tarif wajar)
+         fixtures/contoh_margin_tipis.csv(ongkir besar vs harga jual)
+         fixtures/contoh_campuran.csv    (gabungan + 1 baris invalid)
+     - Kolom wajib: weight_kg, distance_km, volume_cm3, price
+       Kolom opsional: freight_value atau actual_rate, product_weight_g,
+                       length_cm, height_cm, width_cm
+     - Sertakan 1 baris sengaja invalid untuk menguji penanganan error.
+  4. VISUALISASI & ANALISIS:
+     - Distribusi rasio tarif, confusion matrix detektor margin.
+     - Contoh kasus nyata yang terdeteksi (untuk materi demo).
+  5. DOKUMENTASI METODE:
+     - Jelaskan mengapa detektor `rate` lemah untuk kerugian jenis ini
+       (median rasio hanya ~1.0x pada transaksi tidak ekonomis).
+     - Jelaskan batas data: tidak ada kolom modal/diskon.
+     - Jelaskan definisi ground truth: freight_value/price > 0.5.
+
+Deliverable:
+  - Laporan audit model (angka cocok/tidak cocok).
+  - Notebook reproducible.
+  - Folder fixtures/ berisi CSV siap pakai.
+  - Catatan metode + grafik untuk demo.
+
+Definition of Done:
+  - Fixture bisa langsung dipakai Febri (QA) & Ihqfal (UI).
+  - Notebook bisa dijalankan ulang dan menghasilkan artefak serupa.
+  - Angka model yang dilaporkan cocok dengan model/..._info_v5.json.
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ IHQFAL - FRONTEND UI ENGINEER
+ Branch milik: ihqfal
+ File milik : frontend/app/page.tsx, frontend/app/upload/,
+              frontend/app/dashboard/, layout.tsx, globals.css
+------------------------------------------------------------------------
+Tujuan:
+  Membangun tiga halaman utama ProfitLeak AI yang jelas, rapi, dan
+  mudah dipakai saat demo.
+
+Alur aplikasi (3 halaman):
+  1. "/"          -> HOMEPAGE: pengenalan produk, cara pakai AI, fitur.
+  2. "/upload"    -> UPLOAD CSV: unggah data transaksi.
+  3. "/dashboard" -> DASHBOARD: hasil analisis + faktor penyebab +
+                     rekomendasi.
+
+Tugas Ngoding (menyeluruh):
+  1. HOMEPAGE (/):
+     - Hero: nama produk + penjelasan singkat masalah & solusi.
+     - Bagian "Cara Pakai": langkah 1-2-3 (siapkan CSV -> unggah ->
+       lihat hasil).
+     - Bagian fitur: jelaskan deteksi berbasis harga jual & ongkir.
+       WAJIB jujur: tulis bahwa modal/diskon belum tercakup.
+     - Tombol CTA menuju /upload.
+  2. UPLOAD (/upload):
+     - Area drag & drop + tombol pilih file (komponen dari Febri).
+     - Tampilkan nama & ukuran file, tombol "Analisis".
+     - Tampilkan loading, error (termasuk error 400 dari backend),
+       dan state kosong.
+     - Setelah sukses, arahkan ke /dashboard.
+  3. DASHBOARD (/dashboard):
+     - Kartu ringkasan: total transaksi, jumlah terindikasi, tingkat
+       deteksi (%), estimasi kerugian.
+     - Tabel hasil per baris: tarif wajar, tarif aktual, rasio, status.
+     - Kolom "Faktor penyebab": tampilkan isi `reasons[]` (kode + detail).
+     - Panel "Rekomendasi": tampilkan `recommendations[]` dari backend.
+     - Tampilkan baris yang dilewati (`skipped[]`) beserta alasannya.
+  4. Ubah metadata di layout.tsx (title "ProfitLeak AI", deskripsi).
+  5. Visualisasi dengan recharts (sudah ada di package.json):
+     mis. perbandingan tarif wajar vs aktual, bar faktor penyebab.
+  6. Styling responsif Tailwind; tampilan loading & pesan error rapi.
+  7. Gunakan komponen bantu dari Febri (folder components/).
+     JANGAN menulis di folder components/ (itu milik Febri).
+  8. Gunakan data mock dari fixture Galang sampai integrasi Suhafdal
+     siap.
+
+Deliverable:
+  - Tiga halaman lengkap (home, upload, dashboard) memakai data mock.
+
+Definition of Done:
+  - Ketiga halaman tampil rapi di desktop & mobile.
+  - Navigasi antar halaman berjalan.
+  - Dashboard menampilkan alasan & rekomendasi, bukan hanya angka.
+  - Siap menerima data asli dari Suhafdal tanpa ubah struktur besar.
+  - Tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ SUHAFDAL - FRONTEND INTEGRATION ENGINEER
+ Branch milik: suhafdal
+ File milik : frontend/app/lib/api.ts, frontend/app/lib/types.ts,
+              frontend/.env.local
+------------------------------------------------------------------------
+Tujuan:
+  Menghubungkan UI (Ihqfal) ke backend (Irsyad) secara aman dan andal,
+  termasuk tipe data, unggah file, state, dan penanganan error.
+
+Tugas Ngoding (menyeluruh):
+  1. Pastikan .env.local berisi
+     NEXT_PUBLIC_API_URL=http://localhost:8000 .
+  2. Buat frontend/app/lib/api.ts dengan fungsi:
+     - checkHealth()            -> GET  /api/health
+     - getModelInfo()           -> GET  /api/model-info
+     - predict(payload)         -> POST /api/predict
+     - detectLeak(payload)      -> POST /api/detect-leak
+     - uploadCsv(file)          -> POST /api/upload-csv
+       PENTING: upload memakai FormData (multipart/form-data), JANGAN
+       meng-set header Content-Type manual (biar browser mengisi
+       boundary sendiri).
+  3. Buat frontend/app/lib/types.ts sesuai KONTRAK (Bagian 5):
+     - PredictionRequest, PredictionResponse
+     - LeakDetectionRequest, LeakDetectionResponse
+       (termasuk risk_score, margin_risk_probability, detectors, reasons)
+     - UploadCsvResponse (summary, recommendations, rows, skipped)
+     - ApiError ({ detail: string })
+  4. Kelola state di UI: loading, sukses, error, data kosong.
+  5. Tangani error jaringan & 400 dari backend dengan pesan ramah.
+  6. Sediakan mekanisme mudah menukar mock -> data asli (prop/hook),
+     agar Ihqfal bisa langsung memasangnya.
+  7. Batas ukuran file: backend menolak jika baris melebihi 50.000
+     (MAX_CSV_ROWS). Tampilkan peringatan sebelum mengunggah.
+
+Deliverable:
+  - Modul api.ts + types.ts siap dipakai (termasuk uploadCsv).
+  - UI Ihqfal tersambung penuh ke backend Irsyad.
+
+Definition of Done:
+  - Mengisi form & mengunggah CSV memanggil backend dan menampilkan
+    hasil nyata di dashboard.
+  - Error backend (400) tampil sebagai pesan jelas di UI.
+  - Tipe data konsisten dengan kontrak; tidak ada error TypeScript.
+  - Tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ FEBRI - QA + DOCS + FRONTEND SUPPORT
+ Branch milik: febri
+ File milik : frontend/app/components/ (baru), frontend/scripts/ (baru),
+              README / docs
+------------------------------------------------------------------------
+Tujuan:
+  Menjaga kualitas & kelengkapan, sekaligus ikut MENULIS KODE: komponen
+  frontend pendukung dan skrip pengujian.
+
+Tugas Ngoding (menyeluruh):
+  1. Komponen UI reusable di frontend/app/components/ yang dipakai Ihqfal:
+     - UploadDropzone  (area drag & drop file)
+     - SummaryCard     (kartu angka ringkasan)
+     - RiskBadge       (label aman / terindikasi)
+     - ReasonList      (daftar faktor penyebab)
+     - RecommendationPanel (daftar rekomendasi)
+     - EmptyState / ErrorBanner
+  2. Skrip uji di frontend/scripts/:
+     - Uji koneksi GET /api/health.
+     - Uji POST /api/predict & /api/detect-leak dengan fixture Galang.
+     - Uji POST /api/upload-csv (kirim file CSV multipart).
+     - Uji kasus error: input di luar rentang -> harus 400.
+  3. README: cara menjalankan backend & frontend, dependency,
+     troubleshooting (port, venv, .env.local, upload CSV).
+  4. Dokumentasikan kontrak API (bersama Irsyad) dan cara pakai.
+  5. Uji end-to-end: jalankan dua server -> unggah CSV -> hasil benar.
+  6. Catat bug, buat daftar perbaikan, verifikasi ulang sebelum demo.
+  7. Siapkan materi demo (ringkasan fitur & alur).
+  CATATAN: Febri TIDAK menulis di file milik Ihqfal / Suhafdal / Irsyad /
+           Galang. Komponen dipakai lewat import, bukan edit file mereka.
+
+Deliverable:
+  - Komponen reusable (dipakai Ihqfal) + skrip uji jalan.
+  - README lengkap + dokumentasi API.
+  - Laporan hasil QA & kesiapan demo.
+
+Definition of Done:
+  - Komponen terpasang & dipakai di dashboard.
+  - Skrip uji berjalan sesuai harapan (termasuk jalur error 400).
+  - README cukup untuk orang lain menjalankan proyek dari nol.
+  - Tidak menyentuh file di luar area milik.
+
+
+========================================================================
+5. KONTRAK DATA / API  (TITIK TEMU - DIPELIHARA IRSYAD + GALANG)
+========================================================================
+Semua perubahan format WAJIB lewat kesepakatan ini dulu.
+Base URL lokal: http://localhost:8000
+
+------------------------------------------------------------------------
+A. REQUEST - POST /api/predict dan POST /api/detect-leak
+------------------------------------------------------------------------
+Field WAJIB (4):
+{
+  "weight_kg":   0.05 .. 30.0,
+  "distance_km": 1.4896 .. 3135.7885,
+  "volume_cm3":  352.0 .. 244608.0,
+  "price":       4.99 .. 2110.0
+}
+
+Field OPSIONAL (boleh tidak dikirim):
+{
+  "product_weight_g": <number>,   // gram; untuk hitung kepadatan
+  "length_cm": <number>,
+  "height_cm": <number>,
+  "width_cm": <number>,
+  "actual_rate": <number>         // KHUSUS /api/detect-leak
+}
+Catatan:
+  - price_log & density_g_cm3 DIHITUNG BACKEND, jangan dikirim user.
+  - Jika field opsional tidak dikirim, backend memakai nilai default.
+
+------------------------------------------------------------------------
+B. RESPONSE - POST /api/predict
+------------------------------------------------------------------------
+{
+  "predicted_rate": 32.75,   // tarif ongkir wajar (BRL)
+  "currency": "BRL"
+}
+
+------------------------------------------------------------------------
+C. RESPONSE - POST /api/detect-leak
+------------------------------------------------------------------------
+{
+  "predicted_rate": 32.75,
+  "actual_rate": 900.0,          // dari actual_rate, atau price bila kosong
+  "ratio": 27.4849,              // actual_rate / predicted_rate
+  "is_leak": true,               // true bila salah satu detektor menyala
+  "threshold": 3.09779,          // ambang RASIO tarif
+  "currency": "BRL",
+  "message": "<penjelasan singkat>",
+  "risk_score": 0.87,            // 0..1 skor risiko gabungan
+  "freight_ratio": 3.0,          // ongkir / harga jual
+  "margin_risk_probability": 0.97, // probabilitas model risiko (0..1)
+  "detectors": {
+    "rate": true,                // tarif aktual > ambang rasio
+    "margin": true               // model memprediksi transaksi tidak ekonomis
+  },
+  "reasons": [
+    {
+      "code": "rate_exceeds_fair" | "freight_eats_margin",
+      "severity": "high" | "medium",
+      "detail": "<penjelasan>",
+      "remedy": "<saran tindakan>"
+    }
+  ]
+}
+
+------------------------------------------------------------------------
+D. RESPONSE - POST /api/upload-csv  (multipart/form-data, field "file")
+------------------------------------------------------------------------
+Catatan: file .csv UTF-8; maksimal 50.000 baris dianalisis.
+Kolom wajib: weight_kg, distance_km, volume_cm3, price
+Kolom opsional: freight_value / actual_rate, product_weight_g,
+                length_cm, height_cm, width_cm
+
+{
+  "filename": "contoh.csv",
+  "currency": "BRL",
+  "threshold": 3.09779,
+  "margin_threshold": 0.46,
+  "summary": {
+    "total_rows": 4,
+    "analysed": 4,
+    "skipped": 1,
+    "leaks": 2,
+    "rate_leaks": 1,
+    "margin_risks": 1,
+    "estimated_loss": 875.95,
+    "leak_rate": 50.0
+  },
+  "reason_breakdown": { "rate_exceeds_fair": 1, "freight_eats_margin": 1 },
+  "recommendations": [
+    { "code": "freight_eats_margin", "count": 1,
+      "recommendation": "<saran tindakan>" }
+  ],
+  "rows": [ /* sama seperti item pada detect-leak + "line" */ ],
+  "skipped": [ { "line": 6, "reason": "weight_kg=999 di luar rentang" } ]
+}
+
+------------------------------------------------------------------------
+E. RESPONSE - GET /api/model-info
+------------------------------------------------------------------------
+{
+  "info": { ...isi file info JSON... },
+  "threshold": 3.09779,
+  "margin_threshold": 0.46,
+  "margin_proba_threshold": 0.46,
+  "detectors": ["rate", "margin"],
+  "scope": {
+    "covered": [
+      "tarif ongkir aktual jauh di atas tarif wajar",
+      "ongkir menyerap porsi besar dari harga jual"
+    ],
+    "not_covered": ["harga modal / COGS / HPP", "diskon",
+                    "margin keuntungan bersih"],
+    "reason": "Dataset Olist tidak memuat kolom harga modal maupun diskon."
+  },
+  "valid_ranges": { ... },
+  "rate_features": ["weight_kg","distance_km","volume_cm3","price_log",
+                    "density_g_cm3"],
+  "required_inputs": ["weight_kg","distance_km","volume_cm3","price"],
+  "optional_inputs": ["product_weight_g","length_cm","height_cm","width_cm"]
+}
+
+------------------------------------------------------------------------
+F. ERROR (400 / 500)
+------------------------------------------------------------------------
+{
+  "detail": "<pesan error yang bisa ditampilkan ke pengguna>"
+}
+PENTING: validasi input memakai HTTP 400 dengan `detail` berupa STRING,
+bukan 422 dengan list. Frontend cukup menampilkan `detail` apa adanya.
+
+------------------------------------------------------------------------
+G. SCOPE / BATAS MODEL (WAJIB DIPAHAMI SEMUA ANGGOTA)
+------------------------------------------------------------------------
+TERCAKUP:
+  - Tarif ongkir aktual jauh di atas tarif wajar.
+  - Ongkir yang menyerap porsi besar dari harga jual.
+TIDAK TERCAKUP (jangan diklaim):
+  - Harga modal / COGS / HPP.
+  - Diskon / voucher / promo.
+  - Margin keuntungan bersih.
+Alasan: dataset Olist tidak memiliki kolom modal maupun diskon.
+
+
+========================================================================
+6. RINGKASAN MODEL v6 (RUJUKAN CEPAT)
+========================================================================
+Artefak (nama dipertahankan agar tidak bentrok):
+  - model/profitleak_final_model_v5.pkl
+  - model/profitleak_final_model_info_v5.json
+
+Isi model:
+  - rate_model   : HistGradientBoostingRegressor (prediksi tarif wajar)
+  - margin       : HistGradientBoostingClassifier (risiko tidak ekonomis)
+  - Fitur tarif  : weight_kg, distance_km, volume_cm3, price_log,
+                   density_g_cm3
+  - Threshold rasio tarif : 3.09779
+  - Threshold probabilitas margin : 0.46
+
+Metrik (data uji, n = 16.754):
+  - R2 uji                : 0.7349  (v5 lama 0.7227)
+  - Detektor margin  P=0.889  R=0.831  F1=0.859
+  - Detektor rate    P=0.667  R=0.006  F1=0.013  (lemah - lihat catatan)
+  - Gabungan         P=0.887  R=0.836  F1=0.861
+  - Rating model     : 75.6 / 100 (B)
+
+Definisi ground truth:
+  freight_value / price > 0.5  -> transaksi tidak ekonomis.
+
+Catatan jujur:
+  - Detektor `rate` lemah untuk kerugian jenis ini karena median rasio
+    tarif pada transaksi tidak ekonomis hanya ~1.0x. Ini batas konsep,
+    bukan bug. Detektor utama yang bekerja adalah `margin`.
+  - Fitur turunan berbasis freight_value DITOLAK saat training karena
+    menyebabkan target leakage (R2 melonjak palsu 0.73 -> 0.99).
+
+Cara melatih ulang (jika perlu):
+  Jalankan train_v6.py dengan Python yang punya pandas & scikit-learn.
+  Di mesin pengembangan, pandas rusak di backend/.venv, jadi dipakai
+  Python sistem:
+    C:\Users\<user>\AppData\Local\Python\pythoncore-3.14-64\python.exe \
+        train_v6.py
+  Backup model lama tersedia di model/BACKUP_v5_ongkir_only.pkl
+
+
+========================================================================
+7. FASE PROJECT (URUTAN, TANPA JADWAL JAM)
+========================================================================
+Fase 1 - INISIASI & KONTRAK ...................... [SELESAI]
+  Irsyad + Galang menyusun KONTRAK DATA/API (Bagian 5). Disepakati.
+  OUTPUT: kontrak final (versi v6).
+
+Fase 2 - PENGEMBANGAN PARALEL ................... [BERJALAN]
+  Irsyad   : backend + model v6            -> SELESAI
+  Galang   : audit + notebook + fixtures   -> BELUM
+  Ihqfal   : UI 3 halaman (mock)           -> BELUM
+  Suhafdal : api.ts + types.ts (uploadCsv) -> BELUM
+  Febri    : komponen + skrip uji + README -> BELUM
+  PEMICU FASE 3: backend siap (SUDAH) + UI bisa dipakai.
+
+Fase 3 - INTEGRASI .............................. [MENUNGGU]
+  AKTOR UTAMA: Suhafdal.
+    - Menyambungkan UI (Ihqfal) ke backend (Irsyad), termasuk upload CSV.
+    - Ihqfal memasang komponen dari Febri.
+    - Merge tiap branch ke develop setelah review.
+  OUTPUT: alur unggah CSV -> analisis -> dashboard tampil utuh.
+
+Fase 4 - QA MENYELURUH .......................... [MENUNGGU]
+  AKTOR UTAMA: Febri.
+    - Uji end-to-end, validasi input, kasus error (400).
+    - Pemilik bagian memperbaiki temuan di branch masing-masing.
+  OUTPUT: tidak ada bug kritis.
+
+Fase 5 - PENYELESAIAN & DEMO .................... [MENUNGGU]
+  SEMUA: rapikan UI, finalisasi docs, latihan demo bersama.
+  Merge develop -> main saat stabil & siap presentasi.
+
+
+========================================================================
+8. ATURAN ANTI-BENTROK
+========================================================================
+1. Satu file = satu pemilik. Edit file orang lain hanya dengan izin.
+2. Perubahan format data/API hanya lewat pembaruan KONTRAK (Bagian 5),
+   disepakati bersama sebelum diterapkan.
+3. Klaim tugas sebelum mulai; kabari tim jika menyentuh area lain.
+4. Komponen bersama (components/) dikelola Febri; pemakaian oleh Ihqfal
+   dikoordinasikan dengan Febri (import, bukan edit).
+5. Commit kecil & sering di branch pribadi; pastikan tidak mengubah file
+   di luar area milik sebelum merge ke develop.
+6. Demo dilakukan bersama; semua anggota berkontribusi.
+7. File di root (mis. .gitignore, dokumen ini) adalah milik BERSAMA:
+   perubahan wajib dibicarakan dulu.
+
+
+========================================================================
+9. DEMO BERSAMA
+========================================================================
+Semua anggota hadir & berkontribusi saat demo. Pembagian sorotan:
+  Irsyad   : alur backend, endpoint, dan upload CSV.
+  Galang   : audit model, metrik, fixtures, dan BATAS CAKUPAN model.
+  Ihqfal   : tampilan 3 halaman & pengalaman pengguna.
+  Suhafdal : cara data mengalir dari UI (termasuk file CSV) ke backend.
+  Febri    : jaminan kualitas, dokumentasi, dan penutup.
+
+Alur demo yang disarankan:
+  1. (Febri)    Buka dengan ringkas: masalah -> solusi.
+  2. (Ihqfal)   Tunjukkan homepage & penjelasan cara pakai.
+  3. (Suhafdal) Unggah CSV di /upload -> tunjukkan data mengalir.
+  4. (Irsyad)   Tunjukkan dashboard: faktor penyebab & rekomendasi.
+  5. (Galang)   Jelaskan model, metrik, DAN batas cakupan (jujur soal
+                modal/diskon yang belum tercakup).
+  6. (Febri)    Tutup dengan dokumentasi & kesiapan.
+
+PESAN KUNCI SAAT DEMO (hindari klaim berlebih):
+  "Sistem ini mendeteksi transaksi tidak ekonomis berbasis harga jual
+   dan ongkir. Modal dan diskon belum tercakup karena keterbatasan data."
+
+
+========================================================================
+ SELESAI - Pembagian jelas per branch, semua anggota ngoding,
+           demo bersama, klaim jujur sesuai cakupan model.
+========================================================================
