@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Navbar } from "./nav";
+import { AppShell } from "./app-shell";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,8 +26,8 @@ export default function RootLayout({
         {/* Dynamic Global Navbar */}
         <Navbar />
 
-        {/* Main Content Area */}
-        <main className="flex-1 w-full">{children}</main>
+        {/* Main Content Area — di-remount per perubahan URL agar state form bersih */}
+        <AppShell>{children}</AppShell>
 
         {/* Global Clean Footer */}
         <footer className="w-full border-t border-slate-200 bg-white py-6">
