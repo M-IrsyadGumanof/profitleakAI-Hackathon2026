@@ -36,7 +36,8 @@ dist/
 *.jpeg
 *.svg
 
-# Catatan teks (kecualikan requirements.txt)
+# Catatan teks (kecualikan requirements.txt & dokumen tim)
 *.txt
 !requirements.txt
 !**/requirements.txt
+!pembagian_tim_5_orang.txt
