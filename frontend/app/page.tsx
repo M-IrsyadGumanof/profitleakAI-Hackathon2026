@@ -15,21 +15,16 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-16 py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Hero Section */}
-      <section className="flex flex-col items-center text-center max-w-4xl mx-auto pt-6 pb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80 mb-6">
-          <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-          Karya Inovasi Tim KOMEM • Hackathon 2026
-        </div>
-
+      <section className="flex flex-col items-center text-center max-w-4xl mx-auto pt-4 pb-2">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 leading-tight">
-          Hentikan Kebocoran Profit Logistik E-Commerce dengan{" "}
-          <span className="text-blue-600 underline decoration-blue-200 decoration-wavy underline-offset-8">
+          Hentikan Kebocoran Margin Logistik E-Commerce dengan{" "}
+          <span className="text-blue-600">
             Dual-Detector AI
           </span>
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-3xl leading-relaxed">
-          Sistem audit machine learning v6 yang memprediksi tarif wajar pengiriman dan mengidentifikasi transaksi tidak ekonomis yang menggerus margin usaha dari 78.181 pesanan nyata.
+          Sistem audit berbasis machine learning untuk memprediksi tarif wajar pengiriman kurir dan mengidentifikasi transaksi tidak ekonomis yang menggerus margin usaha dari 78.181 pesanan nyata.
         </p>
 
         {/* Call to Actions */}
@@ -55,7 +50,7 @@ export default function HomePage() {
         {/* Key Model Highlights */}
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 w-full pt-8 border-t border-slate-200">
           <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-xs text-left">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Dataset Latih</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Basis Data</span>
             <span className="text-2xl font-bold text-slate-900 mt-1 block">78.181</span>
             <span className="text-xs text-slate-500">Transaksi Riil Olist</span>
           </div>
@@ -65,14 +60,14 @@ export default function HomePage() {
             <span className="text-xs text-slate-500">HistGradientBoosting</span>
           </div>
           <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-xs text-left">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Detektor Margin</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Deteksi Margin</span>
             <span className="text-2xl font-bold text-emerald-600 mt-1 block">F1 85.94%</span>
             <span className="text-xs text-slate-500">Precision 88.9% • Recall 83.1%</span>
           </div>
           <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-xs text-left">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Mata Uang Acuan</span>
             <span className="text-2xl font-bold text-slate-900 mt-1 block">BRL (R$)</span>
-            <span className="text-xs text-slate-500">Real Brasil (Olist Origin)</span>
+            <span className="text-xs text-slate-500">Real Brasil</span>
           </div>
         </div>
       </section>
@@ -80,12 +75,12 @@ export default function HomePage() {
       {/* 3 Langkah Cara Pakai */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Alur Kerja Cepat</span>
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Alur Kerja</span>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
             Cara Menggunakan ProfitLeak AI dalam 3 Langkah
           </h2>
           <p className="text-sm text-slate-600 mt-2">
-            Dari file spreadsheet transaksi hingga rekomendasi audit finansial siap eksekusi.
+            Dari file spreadsheet transaksi hingga laporan audit finansial siap eksekusi.
           </p>
         </div>
 
@@ -97,11 +92,11 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Siapkan File Transaksi</h3>
               <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Siapkan data transaksi dalam format CSV dengan kolom wajib: berat (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">weight_kg</code>), jarak kirim (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">distance_km</code>), dimensi volume (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">volume_cm3</code>), dan harga produk (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">price</code>).
+                Siapkan data transaksi dalam format CSV dengan kolom: berat (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">weight_kg</code>), jarak kirim (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">distance_km</code>), dimensi volume (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">volume_cm3</code>), dan harga produk (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">price</code>).
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
-              Format: Standard UTF-8 CSV (Maks 50.000 baris)
+              Format: Standard UTF-8 CSV (Hingga 50.000 baris)
             </div>
           </div>
 
@@ -112,11 +107,11 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Analisis Dual-Engine AI</h3>
               <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Mesin backend FastAPI memproses baris transaksi melalui dua model AI: memprediksi tarif wajar kurir dan mengkalkulasi kemungkinan ongkir memakan harga produk.
+                Sistem machine learning memproses setiap transaksi: memprediksi tarif wajar kurir berdasarkan rute & dimensi, sekaligus menguji apakah beban ongkir memakan margin harga jual.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
-              Model: Dual HistGradientBoosting (v6)
+              Model: Regresi Tarif & Klasifikasi Risiko Margin
             </div>
           </div>
 
@@ -125,9 +120,9 @@ export default function HomePage() {
               <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-lg border border-blue-200/60 mb-4">
                 3
               </div>
-              <h3 className="text-lg font-bold text-slate-900">Audit & Solusi Nyata</h3>
+              <h3 className="text-lg font-bold text-slate-900">Audit & Rekomendasi Solusi</h3>
               <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Dapatkan dashboard interaktif: total transaksi bocor, estimasi kerugian nominal dalam BRL, faktor pemicu (overcharge vs margin), dan rekomendasi tindak lanjut.
+                Dapatkan dashboard interaktif: total transaksi terindikasi bocor, estimasi kerugian dalam BRL, faktor pemicu, dan rekomendasi perbaikan spesifik per rute atau produk.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
@@ -140,12 +135,12 @@ export default function HomePage() {
       {/* Arsitektur Dua Detektor */}
       <section className="flex flex-col gap-6">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Arsitektur v6</span>
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Arsitektur Deteksi</span>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
-            Dua Detektor Spesialis: Menutup Dua Celah Berbeda
+            Dua Detektor Terpadu: Menutup Dua Celah Berbeda
           </h2>
           <p className="text-sm text-slate-600 mt-2">
-            Mengapa satu model regresi saja tidak cukup? Model v6 mengombinasikan deteksi tarif overcharge dan proteksi margin.
+            Menggabungkan audit kewajaran tarif ekspedisi dan proteksi margin harga jual produk.
           </p>
         </div>
 
@@ -159,12 +154,12 @@ export default function HomePage() {
                   <h3 className="text-lg font-bold text-slate-900">Detektor 1: Tarif Wajar (Rate)</h3>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                  Regresi
+                  Regresi Logistik
                 </span>
               </div>
 
               <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-                Bertugas memprediksi tarif ongkir yang sewajarnya dibebankan oleh kurir untuk paket dengan berat, jarak, volume, dan kepadatan tertentu.
+                Memprediksi ongkir wajar yang seharusnya dibebankan kurir untuk paket dengan berat, jarak, volume, dan kepadatan tertentu.
               </p>
 
               <div className="mt-5 space-y-2.5 text-xs text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200/80">
@@ -183,8 +178,8 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Aksi Remedy:</span>
-                  <span className="text-slate-800 text-right">Negosiasi ulang tarif rute atau ganti mitra logistik</span>
+                  <span className="text-slate-500">Solusi:</span>
+                  <span className="text-slate-800 text-right">Negosiasi ulang tarif rute atau gunakan ekspedisi alternatif</span>
                 </div>
               </div>
             </div>
@@ -199,12 +194,12 @@ export default function HomePage() {
                   <h3 className="text-lg font-bold text-slate-900">Detektor 2: Risiko Margin (Margin)</h3>
                 </div>
                 <span className="text-xs font-semibold px-2.5 py-1 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                  Klasifikasi
+                  Klasifikasi Margin
                 </span>
               </div>
 
               <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-                Mendeteksi pesanan tidak ekonomis di mana biaya ongkir menyerap porsi terlalu besar (&gt;50%) dari harga jual barang, meskipun tarif ekspedisinya sendiri tergolong wajar.
+                Mendeteksi transaksi tidak ekonomis di mana biaya ongkir menyerap porsi terlalu besar (&gt;50%) dari harga jual barang.
               </p>
 
               <div className="mt-5 space-y-2.5 text-xs text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200/80">
@@ -213,8 +208,8 @@ export default function HomePage() {
                   <span className="font-semibold text-slate-900">HistGradientBoostingClassifier</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ambang Batas Probabilitas:</span>
-                  <span className="font-semibold text-rose-600">Probabilitas &ge; 0.46 (46%)</span>
+                  <span className="text-slate-500">Ambang Batas Risiko:</span>
+                  <span className="font-semibold text-rose-600">Probabilitas &ge; 46%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Kode Deteksi:</span>
@@ -223,8 +218,8 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Aksi Remedy:</span>
-                  <span className="text-slate-800 text-right">Naikkan harga jual, bundling paket, atau batas minimum order</span>
+                  <span className="text-slate-500">Solusi:</span>
+                  <span className="text-slate-800 text-right">Penyesuaian harga jual, bundling barang, atau minimum order</span>
                 </div>
               </div>
             </div>
@@ -232,42 +227,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Batasan Ilmiah Jujur (Scientific Honesty Box) */}
-      <section className="p-6 sm:p-8 rounded-xl bg-amber-50/60 border border-amber-200/80">
+      {/* Batasan Cakupan Sistem */}
+      <section className="p-6 sm:p-8 rounded-xl bg-slate-100/70 border border-slate-200">
         <div className="flex items-start gap-4">
-          <div className="p-2 rounded-lg bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+          <div className="p-2 rounded-lg bg-slate-200 text-slate-700 shrink-0 mt-0.5">
             <Info className="w-5 h-5" />
           </div>
           <div className="flex flex-col gap-2">
-            <h3 className="text-base font-bold text-amber-900">
-              Transparansi Ilmiah: Batas Cakupan Model (Scope & Limitations)
+            <h3 className="text-base font-bold text-slate-900">
+              Cakupan & Batasan Sistem Audit
             </h3>
-            <p className="text-sm text-amber-800 leading-relaxed">
-              Sebagai bentuk integritas data dalam Hackathon 2026, kami menegaskan batas cakupan deteksi sistem:
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Sistem ini dirancang dengan parameter yang jelas berdasarkan data faktual transaksi:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-              <div className="p-3 bg-white/80 rounded-lg border border-amber-200">
+              <div className="p-3.5 bg-white rounded-lg border border-slate-200">
                 <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  YANG TERCAKUP OLEH MODEL:
+                  CAKUPAN DETEKSI:
                 </span>
-                <ul className="text-xs text-slate-700 list-disc list-inside mt-1.5 space-y-1">
-                  <li>Tarif ongkir aktual yang jauh melebihi tarif wajar kurir.</li>
-                  <li>Transaksi tidak ekonomis di mana ongkir memakan porsi besar dari harga jual.</li>
+                <ul className="text-xs text-slate-600 list-disc list-inside mt-1.5 space-y-1">
+                  <li>Tarif ongkir aktual yang melebihi batas wajar benchmark rute.</li>
+                  <li>Transaksi tidak ekonomis di mana ongkir memakan porsi besar harga barang.</li>
                   <li>Kepadatan paket (<code className="bg-slate-100 px-1 py-0.2 rounded">density_g_cm3</code>) dan dimensi volumetrik.</li>
                 </ul>
               </div>
 
-              <div className="p-3 bg-white/80 rounded-lg border border-amber-200">
-                <span className="text-xs font-bold text-rose-800 flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-rose-600" />
-                  TIDAK TERCAKUP (KLAIM JUJUR):
+              <div className="p-3.5 bg-white rounded-lg border border-slate-200">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-slate-500" />
+                  DI LUAR CAKUPAN:
                 </span>
-                <ul className="text-xs text-slate-700 list-disc list-inside mt-1.5 space-y-1">
-                  <li>Harga Pokok Penjualan (HPP / COGS / Biaya Modal).</li>
-                  <li>Kupon diskon / voucher promo pembeli.</li>
+                <ul className="text-xs text-slate-600 list-disc list-inside mt-1.5 space-y-1">
+                  <li>Harga Pokok Penjualan (HPP / COGS / Modal).</li>
+                  <li>Voucher promosi atau diskon penjual.</li>
                   <li>
-                    <em>Alasan:</em> Dataset Olist tidak memiliki data kolom modal maupun diskon.
+                    <em>Catatan:</em> Model berfokus pada data faktual ongkir dan harga jual riil.
                   </li>
                 </ul>
               </div>
@@ -280,7 +275,7 @@ export default function HomePage() {
       <section className="text-center py-8 border-t border-slate-200">
         <h2 className="text-2xl font-bold text-slate-900">Siap Menguji Data Transaksi Anda?</h2>
         <p className="text-sm text-slate-600 mt-2 max-w-xl mx-auto">
-          Unggah file CSV transaksi Anda atau gunakan dataset demo yang sudah kami sediakan untuk melihat cara kerja model v6 secara langsung.
+          Unggah file CSV transaksi Anda atau gunakan data demo untuk melihat cara kerja sistem secara langsung.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -295,7 +290,7 @@ export default function HomePage() {
             className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg shadow-xs transition-colors"
           >
             <Gauge className="w-4 h-4 text-slate-500" />
-            Buka Dashboard Langsung
+            Buka Dashboard Demo
           </Link>
         </div>
       </section>

@@ -17,7 +17,7 @@ import {
   X 
 } from "lucide-react";
 
-// Mock dataset fixture Olist v6 siap pakai untuk pengujian demo
+// Mock dataset fixture Olist siap pakai untuk pengujian
 const DEMO_CSV_CONTENT = `weight_kg,distance_km,volume_cm3,price,freight_value
 2.5,450.2,12000,129.90,24.50
 0.8,120.5,3500,45.00,14.20
@@ -42,11 +42,10 @@ export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Proses pembacaan file CSV lokal
   const handleProcessFile = (selectedFile: File) => {
     setErrorMessage(null);
     if (!selectedFile.name.endsWith(".csv") && selectedFile.type !== "text/csv") {
-      setErrorMessage("Format file harus berformat CSV (.csv).");
+      setErrorMessage("Format file harus berupa CSV (.csv).");
       return;
     }
 
@@ -104,14 +103,12 @@ export default function UploadPage() {
     }
   };
 
-  // Gunakan data preset demo
   const handleLoadDemoDataset = () => {
     const blob = new Blob([DEMO_CSV_CONTENT], { type: "text/csv" });
-    const demoFile = new File([blob], "olist_demo_sample_v6.csv", { type: "text/csv" });
+    const demoFile = new File([blob], "transaksi_sample_olist.csv", { type: "text/csv" });
     handleProcessFile(demoFile);
   };
 
-  // Unduh template CSV
   const handleDownloadTemplate = () => {
     const templateContent = `weight_kg,distance_km,volume_cm3,price,freight_value,product_weight_g,length_cm,height_cm,width_cm
 1.5,500.0,8000,120.00,25.50,1500,20,20,20
@@ -129,7 +126,6 @@ export default function UploadPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Kirim ke backend atau fallback simulasi
   const handleSubmitAnalysis = async () => {
     if (!file) return;
 
@@ -140,7 +136,6 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      // Coba panggil backend FastAPI
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await fetch(`${apiUrl}/api/upload-csv`, {
         method: "POST",
@@ -157,10 +152,8 @@ export default function UploadPage() {
       router.push("/dashboard");
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      // Jika backend tidak aktif di localhost:8000, gunakan fallback simulasi v6 langsung di browser
       if (errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError")) {
-        // Lakukan simulasi v6 client-side agar demo tidak terputus
-        const simulated = runClientV6Simulation(file.name);
+        const simulated = runClientSimulation(file.name);
         sessionStorage.setItem("profitleak_analysis_result", JSON.stringify(simulated));
         router.push("/dashboard");
       } else {
@@ -170,8 +163,7 @@ export default function UploadPage() {
     }
   };
 
-  // Simulasi v6 client-side fallback (kompatibel penuh dengan kontrak data v6)
-  const runClientV6Simulation = (filename: string) => {
+  const runClientSimulation = (filename: string) => {
     return {
       filename,
       currency: "BRL",
@@ -195,12 +187,12 @@ export default function UploadPage() {
         {
           code: "freight_eats_margin",
           count: 4,
-          recommendation: "Naikkan harga jual atau terapkan minimum order agar ongkir tidak menghabiskan margin.",
+          recommendation: "Naikkan harga jual atau terapkan minimum order agar ongkir tidak menghabiskan margin kotor.",
         },
         {
           code: "rate_exceeds_fair",
           count: 2,
-          recommendation: "Negosiasi tarif ekspedisi / pilih layanan lebih murah pada rute padat.",
+          recommendation: "Negosiasi tarif ekspedisi atau pilih layanan kurir alternatif pada rute padat.",
         },
       ],
       rows: [
@@ -239,7 +231,7 @@ export default function UploadPage() {
             {
               code: "rate_exceeds_fair",
               severity: "high",
-              detail: "Tarif aktual 3.44x lipat tarif wajar (ambang 3.0978x).",
+              detail: "Tarif kurir aktual 3.44x lipat tarif wajar (ambang 3.10x).",
               remedy: "Negosiasi ulang tarif dengan ekspedisi untuk rute jarak jauh.",
             },
             {
@@ -320,14 +312,11 @@ export default function UploadPage() {
       {/* Header Halaman */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200 mb-2">
-            Modul Analisis Batch
-          </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Unggah Dataset Transaksi
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Unggah file CSV transaksi pengiriman untuk dianalisis serentak oleh Dual-Detector AI (v6).
+            Unggah file CSV transaksi pengiriman untuk dianalisis oleh sistem audit ProfitLeak.
           </p>
         </div>
 
@@ -430,7 +419,7 @@ export default function UploadPage() {
             onClick={handleLoadDemoDataset}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded-md shadow-xs transition-colors shrink-0"
           >
-            Gunakan Contoh Dataset Demo (12 Baris)
+            Gunakan Data Sampel (12 Baris)
           </button>
         </div>
       )}
@@ -480,7 +469,7 @@ export default function UploadPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Menganalisis Transaksi dengan Dual-Engine v6...
+                  Menganalisis Transaksi...
                 </>
               ) : (
                 <>
@@ -523,7 +512,7 @@ export default function UploadPage() {
 
           <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
             <span className="font-bold text-slate-900 block mb-1">
-              Kolom Opsional (Disarankan):
+              Kolom Opsional:
             </span>
             <ul className="space-y-1.5 text-slate-600 list-disc list-inside">
               <li>

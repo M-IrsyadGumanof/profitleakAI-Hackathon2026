@@ -30,9 +30,8 @@ import {
   ReferenceLine,
 } from "recharts";
 
-// Data default jika dibuka tanpa upload terlebih dahulu
 const DEFAULT_ANALYSIS_DATA = {
-  filename: "olist_demo_dataset_v6.csv",
+  filename: "transaksi_sample_olist.csv",
   currency: "BRL",
   threshold: 3.09779,
   margin_threshold: 0.46,
@@ -262,10 +261,9 @@ const DEFAULT_ANALYSIS_DATA = {
   skipped: [],
 };
 
-// Skenario preset untuk simulator transaksi tunggal
 const SIMULATOR_PRESETS = [
   {
-    name: "Standar Sehat (Normal)",
+    name: "Standar Wajar (Normal)",
     weight_kg: 2.5,
     distance_km: 450.0,
     volume_cm3: 12000,
@@ -299,14 +297,12 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "leaks" | "normal">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Simulator Form State
   const [simWeight, setSimWeight] = useState(2.5);
   const [simDistance, setSimDistance] = useState(450.0);
   const [simVolume, setSimVolume] = useState(12000);
   const [simPrice, setSimPrice] = useState(150.0);
   const [simActualRate, setSimActualRate] = useState(24.5);
 
-  // Muat data dari sessionStorage jika ada
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("profitleak_analysis_result");
@@ -317,11 +313,10 @@ export default function DashboardPage() {
         }
       }
     } catch {
-      // Abaikan dan gunakan default
+      // fallback to default
     }
   }, []);
 
-  // Filter baris transaksi di tabel
   const filteredRows = useMemo(() => {
     return data.rows.filter((row) => {
       if (statusFilter === "leaks" && !row.is_leak) return false;
@@ -336,7 +331,6 @@ export default function DashboardPage() {
     });
   }, [data.rows, statusFilter, searchQuery]);
 
-  // Kalkulasi Simulator Real-Time
   const simulatorResult = useMemo(() => {
     const w = Math.max(0.05, Math.min(30.0, simWeight));
     const d = Math.max(1.5, Math.min(3135.0, simDistance));
@@ -344,7 +338,6 @@ export default function DashboardPage() {
     const p = Math.max(4.99, Math.min(2110.0, simPrice));
     const act = Math.max(0.1, simActualRate);
 
-    // Formula aproksimasi akurat model HistGradientBoosting v6
     const logPrice = Math.log1p(p);
     const density = (w * 1000) / Math.max(v, 1);
     const predictedLog =
@@ -360,7 +353,6 @@ export default function DashboardPage() {
     const freightRatio = Math.round((act / p) * 10000) / 10000;
 
     const isRateLeak = ratio > 3.09779;
-    // Probabilitas risiko margin
     const marginRiskProb = Math.min(
       1.0,
       Math.max(0.0, 0.25 + 0.55 * (freightRatio / 1.2) + 0.1 * (w / 15))
@@ -384,7 +376,6 @@ export default function DashboardPage() {
     };
   }, [simWeight, simDistance, simVolume, simPrice, simActualRate]);
 
-  // Format mata uang BRL
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -394,13 +385,13 @@ export default function DashboardPage() {
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col gap-6">
-      {/* Top Breadcrumb & Actions */}
+      {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Link
             href="/upload"
             className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-            title="Unggah File Lain"
+            title="Unggah File Baru"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
@@ -410,7 +401,7 @@ export default function DashboardPage() {
                 Dashboard Audit Transaksi
               </h1>
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                Model v6 Dual-Engine
+                Dual-Engine Detector
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -425,7 +416,7 @@ export default function DashboardPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors"
           >
             <FileSpreadsheet className="w-4 h-4 text-slate-500" />
-            Unggah File Lain
+            Unggah File Baru
           </Link>
         </div>
       </div>
@@ -532,9 +523,7 @@ export default function DashboardPage() {
       {/* TAB 1: OVERVIEW & CHARTS */}
       {activeTab === "overview" && (
         <div className="flex flex-col gap-6">
-          {/* Grafik Recharts & Breakdown Detektor */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Chart: Rasio Tarif Tiap Baris Transaksi */}
             <div className="lg:col-span-2 p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -543,7 +532,7 @@ export default function DashboardPage() {
                       Rasio Tarif Transaksi vs Ambang Batas Wajar
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Nilai rasio tarif aktual terhadap estimasi wajar model v6. Batas anomali: {data.threshold.toFixed(2)}x.
+                      Nilai rasio tarif aktual terhadap estimasi tarif wajar. Ambang batas anomali: {data.threshold.toFixed(2)}x.
                     </p>
                   </div>
                 </div>
@@ -623,14 +612,13 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Pemicu Kebocoran (Breakdown Detektor) */}
             <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900">
                   Pemicu Kebocoran (Dual-Detector)
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Distribusi penyebab anomali berdasarkan dua model AI v6.
+                  Distribusi penyebab anomali berdasarkan dua detektor sistem.
                 </p>
 
                 <div className="mt-6 space-y-4">
@@ -672,14 +660,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Panel Rekomendasi Audit Finansial Otomatis */}
           <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
               Rekomendasi Tindak Lanjut Finansial
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Langkah strategis yang dihasilkan otomatis oleh backend v6 untuk menutup celah kebocoran laba:
+              Langkah strategis yang dihasilkan otomatis oleh sistem untuk menutup celah kebocoran laba:
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -706,7 +693,6 @@ export default function DashboardPage() {
       {/* TAB 2: AUDIT TABLE */}
       {activeTab === "table" && (
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-4">
-          {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
@@ -753,7 +739,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Table Container */}
           <div className="overflow-x-auto border border-slate-200 rounded-lg">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-600 uppercase font-bold tracking-wider border-b border-slate-200">
@@ -834,7 +819,6 @@ export default function DashboardPage() {
       {/* TAB 3: SIMULATOR TRANSAKSI TUNGGAL */}
       {activeTab === "simulator" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Kolom Kontrol Input & Preset */}
           <div className="lg:col-span-2 p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-6">
             <div>
               <div className="flex items-center justify-between">
@@ -845,11 +829,10 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-500">Mata Uang: BRL (R$)</span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Ketik atau pilih preset skenario di bawah untuk menguji respon model v6 secara instan.
+                Ketik atau pilih preset skenario di bawah untuk menguji respon sistem audit secara instan.
               </p>
             </div>
 
-            {/* Tombol Preset Skenario */}
             <div>
               <span className="text-xs font-semibold text-slate-700 block mb-2">
                 Pilih Skenario Cepat:
@@ -874,7 +857,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Input Form Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
@@ -959,17 +941,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Kolom Hasil Evaluasi Simulator */}
           <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <div>
               <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
-                Evaluasi Model AI v6
+                Hasil Evaluasi AI
               </span>
               <h3 className="text-lg font-bold text-slate-900 mt-1">
                 {simulatorResult.isLeak ? "Terindikasi Kebocoran Laba" : "Transaksi Wajar & Sehat"}
               </h3>
 
-              {/* Status Badge */}
               <div className="mt-3">
                 {simulatorResult.isLeak ? (
                   <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
@@ -991,7 +971,6 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Rincian Angka Kunci */}
               <div className="mt-5 space-y-2.5 text-xs text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Estimasi Tarif Wajar:</span>
@@ -1021,7 +1000,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 text-center">
-              Perhitungan sesuai dengan backend FastAPI `POST /api/detect-leak`
+              Evaluasi berbasis model regresi tarif & klasifikasi margin
             </div>
           </div>
         </div>
