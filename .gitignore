@@ -36,6 +36,9 @@ dist/
 *.jpeg
 *.svg
 
+# Pengecualian aset visual & logo frontend
+!frontend/public/**
+
 # Catatan teks (kecualikan requirements.txt & dokumen tim)
 *.txt
 !requirements.txt
