@@ -351,6 +351,7 @@ export default function UploadPage() {
 
       {/* Drag & Drop Area */}
       <div
+        data-dropzone="true"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
