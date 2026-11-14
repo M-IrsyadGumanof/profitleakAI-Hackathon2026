@@ -212,25 +212,25 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
         float h_col = smoothstep(0.0, 0.25, a_norm);
         float f_col = smoothstep(0.4, 0.85, a_norm);
 
-        // Palet Warna Asli Netlify Drop:
-        // Teal 500  : #00ad9f -> rgb(0.0, 0.68, 0.62)
-        // Teal 200  : #8eebe7 -> rgb(0.56, 0.92, 0.91)
-        // Aurora C  : #0ff0e1 -> rgb(0.06, 0.94, 0.88)
-        // Royal Blue: #2563eb -> rgb(0.145, 0.388, 0.922)
-        vec3 colA = vec3(0.0, 0.68, 0.62);
-        vec3 colB = vec3(0.56, 0.92, 0.91);
-        vec3 colC = vec3(0.06, 0.94, 0.88);
+        // Palet Warna Opsi 2 (Corporate Deep Navy & Ice Blue):
+        // Navy 700   : #1E40AF -> rgb(0.118, 0.251, 0.686)
+        // Ice Sky 300 : #7DD3FC -> rgb(0.490, 0.827, 0.988)
+        // Cyan 400    : #38BDF8 -> rgb(0.220, 0.741, 0.973)
+        // Royal Accent: #2563EB -> rgb(0.145, 0.388, 0.922)
+        vec3 colA = vec3(0.118, 0.251, 0.686);
+        vec3 colB = vec3(0.490, 0.827, 0.988);
+        vec3 colC = vec3(0.220, 0.741, 0.973);
         vec3 colAccent = vec3(0.145, 0.388, 0.922);
 
         vec3 auroraCol = mix(mix(colA, colB, h_col), colC, f_col);
 
-        // Tambahkan kilau cairan biru royal di jalur kursor
+        // Tambahkan kilau cairan biru es/navy di jalur kursor
         float liquidGlow = exp(-dist * 5.5) * length(u_mouse_vel) * 2.8 * u_hover;
         auroraCol = mix(auroraCol, colAccent, clamp(liquidGlow, 0.0, 0.75));
 
-        // Jika user sedang drag file ke atas dropzone, berikan kilauan aktif
+        // Jika user sedang drag file ke atas dropzone, berikan kilauan aktif cyan-blue
         float dragPulse = u_drag * (sin(u_time * 8.0) * 0.15 + 0.25);
-        auroraCol += vec3(0.1, 0.3, 0.35) * dragPulse;
+        auroraCol += vec3(0.15, 0.35, 0.65) * dragPulse;
 
         // Skala intensitas cahaya aurora
         float intensity = 1.15;
@@ -240,8 +240,8 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
         float scanline = sin(uv.y * u_resolution.y * 1.6) * 0.5 + 0.5;
         finalRgb *= (1.0 - 0.18 * scanline);
 
-        // Background Gradien Navy/Teal Dalam Ala Netlify
-        vec3 bgGrad = mix(vec3(0.05, 0.09, 0.18), vec3(0.02, 0.04, 0.10), uv.y);
+        // Background Gradien Dark Corporate Slate/Navy (#0B1120 ke #020617)
+        vec3 bgGrad = mix(vec3(0.043, 0.067, 0.125), vec3(0.008, 0.024, 0.090), uv.y);
         vec3 composite = bgGrad + finalRgb;
 
         // Transparansi halus
