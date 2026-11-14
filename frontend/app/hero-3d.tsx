@@ -1,28 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 export function Hero3D() {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    let ticking = false;
-    const handleScrollState = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > 30);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    handleScrollState();
-    window.addEventListener("scroll", handleScrollState, { passive: true });
-    return () => window.removeEventListener("scroll", handleScrollState);
-  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -66,20 +48,37 @@ export function Hero3D() {
     rimLight.position.set(2, 4, 4);
     scene.add(rimLight);
 
-    // 3. Root 3D Group
+    // 3. Root 3D Group & Subgroups
     const rootGroup = new THREE.Group();
     scene.add(rootGroup);
 
-    // Responsif: tempatkan di sebelah kanan pada desktop, di tengah atas pada mobile
+    // Shield group: perisai yang membeku / diam saat discroll
+    const shieldGroup = new THREE.Group();
+    rootGroup.add(shieldGroup);
+
+    // Core group: kubus, cincin, dan partikel yang SELALU beranimasi aktif
+    const coreGroup = new THREE.Group();
+    rootGroup.add(coreGroup);
+
+    // Parameter layout: awal (top) vs saat discroll (kiri membesar sebagai background monumental)
+    let isDesktop = window.innerWidth >= 1024;
+    let startX = isDesktop ? 2.4 : 0;
+    let startY = isDesktop ? 0.1 : 0.8;
+    let startScale = isDesktop ? 1.05 : 0.72;
+
+    let targetX = isDesktop ? -2.75 : -1.0;
+    let targetY = isDesktop ? -0.1 : 0.2;
+    let targetScale = isDesktop ? 2.4 : 1.45;
+
     const updateLayout = () => {
-      const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop) {
-        rootGroup.position.set(2.4, 0.1, 0);
-        rootGroup.scale.set(1.05, 1.05, 1.05);
-      } else {
-        rootGroup.position.set(0, 1.0, -1.0);
-        rootGroup.scale.set(0.72, 0.72, 0.72);
-      }
+      isDesktop = window.innerWidth >= 1024;
+      startX = isDesktop ? 2.4 : 0;
+      startY = isDesktop ? 0.1 : 0.8;
+      startScale = isDesktop ? 1.05 : 0.72;
+
+      targetX = isDesktop ? -2.75 : -1.0;
+      targetY = isDesktop ? -0.1 : 0.2;
+      targetScale = isDesktop ? 2.4 : 1.45;
     };
     updateLayout();
 
@@ -123,7 +122,7 @@ export function Hero3D() {
     });
 
     const shieldMesh = new THREE.Mesh(shieldGeometry, shieldMaterial);
-    rootGroup.add(shieldMesh);
+    shieldGroup.add(shieldMesh);
 
     // 5. Kubus Logistik 3D di Tengah (Interlocking Cube)
     const cubeSize = 1.05;
@@ -141,7 +140,7 @@ export function Hero3D() {
 
     const cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterials);
     cubeMesh.rotation.set(0.65, 0.78, 0.2);
-    rootGroup.add(cubeMesh);
+    coreGroup.add(cubeMesh);
 
     // Wireframe edge glow
     const wireGeo = new THREE.EdgesGeometry(cubeGeometry);
@@ -154,14 +153,14 @@ export function Hero3D() {
     const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
     const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
     ring1.rotation.x = Math.PI / 2.3;
-    rootGroup.add(ring1);
+    coreGroup.add(ring1);
 
     const ringGeo2 = new THREE.TorusGeometry(3.3, 0.015, 16, 100);
     const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.3 });
     const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
     ring2.rotation.x = Math.PI / 3;
     ring2.rotation.y = Math.PI / 6;
-    rootGroup.add(ring2);
+    coreGroup.add(ring2);
 
     // 7. Partikel Aliran Transaksi 3D (Swarm Audit Nodes)
     const particleCount = 80;
@@ -200,20 +199,21 @@ export function Hero3D() {
     });
 
     const particles = new THREE.Points(particleGeo, particleMat);
-    rootGroup.add(particles);
+    coreGroup.add(particles);
 
-    // 8. Interaktivitas: Drag, Mouse Parallax & Scroll Coupling
+    // 8. Interaktivitas: Drag, Mouse Parallax & Dynamic Scroll Coupling
     let targetRotX = 0;
     let targetRotY = 0;
     let currentRotX = 0;
     let currentRotY = 0;
-    let scrollRotY = 0;
     let isDragging = false;
     let prevPointerX = 0;
     let prevPointerY = 0;
 
+    let targetScrollY = 0;
+    let smoothScrollY = 0;
+
     const handlePointerDown = (e: PointerEvent) => {
-      // Hanya drag jika klik langsung pada background canvas
       if ((e.target as HTMLElement).tagName === "CANVAS") {
         isDragging = true;
         prevPointerX = e.clientX;
@@ -232,12 +232,11 @@ export function Hero3D() {
         targetRotX += deltaY * 0.007;
         targetRotX = Math.max(-0.8, Math.min(0.8, targetRotX));
       } else {
-        // Parallax kursor lembut di seluruh halaman
         const normX = e.clientX / window.innerWidth - 0.5;
         const normY = e.clientY / window.innerHeight - 0.5;
 
-        targetRotY = normX * 0.55;
-        targetRotX = -normY * 0.45;
+        targetRotY = normX * 0.45;
+        targetRotX = -normY * 0.35;
       }
     };
 
@@ -246,9 +245,7 @@ export function Hero3D() {
     };
 
     const handleScroll = () => {
-      // Putar perisai perlahan saat halaman discroll ke bawah (Sticky Parallax)
-      const scrollY = window.scrollY;
-      scrollRotY = scrollY * 0.0016;
+      targetScrollY = window.scrollY;
     };
 
     window.addEventListener("pointerdown", handlePointerDown);
@@ -282,28 +279,41 @@ export function Hero3D() {
       const elapsed = (now - startTime) / 1000;
       prevTime = now;
 
-      // Rotasi kontinu anggun
+      // 1. Interpolasi Scroll Mulus (Damping)
+      smoothScrollY += (targetScrollY - smoothScrollY) * 0.07;
+      const progress = Math.min(1, Math.max(0, smoothScrollY / 550));
+      // Smoothstep curve
+      const t = progress * progress * (3 - 2 * progress);
+
+      // 2. Transformasi Root Group: Membesar & Pindah ke Sisi Kiri Layar saat discroll
+      const curX = THREE.MathUtils.lerp(startX, targetX, t);
+      const curY = THREE.MathUtils.lerp(startY, targetY, t);
+      const curScale = THREE.MathUtils.lerp(startScale, targetScale, t);
+      rootGroup.position.set(curX, curY, 0);
+      rootGroup.scale.set(curScale, curScale, curScale);
+
+      // 3. Rotasi Perisai:
+      // Di atas (t = 0), perisai berotasi anggun dan merespons kursor.
+      // Saat discroll (t -> 1), rotasi perisai melambat dan MEMBEKU DIAM pada sudut statis yang gagah.
       if (!isDragging) {
-        targetRotY += delta * 0.16;
+        targetRotY += delta * 0.16 * (1 - t);
       }
 
-      // Spring damping lerp
       currentRotX += (targetRotX - currentRotX) * 0.06;
       currentRotY += (targetRotY - currentRotY) * 0.06;
 
-      rootGroup.rotation.x = currentRotX;
-      rootGroup.rotation.y = currentRotY + scrollRotY;
+      // Saat t = 1, perisai diam stabil tanpa animasi rotasi
+      shieldGroup.rotation.x = THREE.MathUtils.lerp(currentRotX, 0.02, t);
+      shieldGroup.rotation.y = THREE.MathUtils.lerp(currentRotY, -0.12, t);
 
-      // Orbit kubus mandiri di dalam perisai
+      // 4. KUBUS DI TENGAH TETAP MEMILIKI ANIMASI SEPERTI BIASA!
       cubeMesh.rotation.x = 0.65 + Math.sin(elapsed * 1.2) * 0.15;
       cubeMesh.rotation.y = 0.78 + elapsed * 0.45;
       cubeMesh.position.y = Math.sin(elapsed * 1.8) * 0.08;
 
-      // Cincin hologram
+      // Cincin & Partikel tetap berputar anggun mengiringi kubus
       ring1.rotation.z = elapsed * 0.3;
       ring2.rotation.z = -elapsed * 0.25;
-
-      // Partikel audit
       particles.rotation.y = -elapsed * 0.1;
 
       renderer.render(scene, camera);
@@ -343,19 +353,9 @@ export function Hero3D() {
   return (
     // Sticky Background Penuh yang tidak bergeser saat di-scroll
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
-      {/* 3D WebGL Canvas */}
       <div
         ref={containerRef}
         className="w-full h-full pointer-events-auto cursor-grab active:cursor-grabbing"
-      />
-
-      {/* Dynamic Background Blur Overlay saat di-scroll (Clean saat di atas, blur saat scroll) */}
-      <div
-        className={`absolute inset-0 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isScrolled
-            ? "backdrop-blur-md bg-slate-50/50"
-            : "backdrop-blur-none bg-transparent"
-        }`}
       />
     </div>
   );

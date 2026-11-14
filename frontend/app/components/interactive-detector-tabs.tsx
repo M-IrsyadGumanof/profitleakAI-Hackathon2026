@@ -19,7 +19,7 @@ export function InteractiveDetectorTabs() {
           }`}
         >
           <Truck className="w-4 h-4" />
-          <span>Detektor 1: Tarif</span>
+          <span>Detektor 1: Tarif Kurir</span>
         </button>
 
         <button
@@ -31,7 +31,7 @@ export function InteractiveDetectorTabs() {
           }`}
         >
           <TrendingDown className="w-4 h-4" />
-          <span>Detektor 2: Margin</span>
+          <span>Detektor 2: Laba & Margin</span>
         </button>
 
         <button
@@ -43,7 +43,7 @@ export function InteractiveDetectorTabs() {
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>Sinergi Sistem</span>
+          <span>Sinergi Perlindungan</span>
         </button>
       </div>
 
@@ -53,32 +53,32 @@ export function InteractiveDetectorTabs() {
           <div className="p-6 sm:p-8 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-900/5 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
             <div className="lg:col-span-7 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-slate-200/80 text-slate-800 text-xs font-semibold">
-                <Cpu className="w-3.5 h-3.5 text-[#1E40AF]" />
-                <span>HistGradientBoostingRegressor • R² 73.49%</span>
+                <Truck className="w-3.5 h-3.5 text-[#1E40AF]" />
+                <span>Auditor Tarif Ekspedisi • Akurasi R² 73.49%</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Deteksi Pembebanan Tarif Kurir di Atas Ambang Wajar
+                Mendeteksi Tagihan Kurir yang Jauh di Atas Tarif Wajar
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Memprediksi ongkir wajar berdasarkan profil fisik logistik dan jarak tempuh. Jika tarif kurir riil melebihi <strong className="text-slate-900 font-bold">3.0978x</strong> dari estimasi wajar model, sistem menandai anomali biaya ekspedisi yang memerlukan re-negosiasi kontrak kurir.
+                AI mempelajari pola tarif dari 78.181 pengiriman untuk menghitung estimasi biaya wajar berdasarkan jarak tempuh, berat paket, dan volume kubik. Jika kurir menagih ongkir lebih dari 3x lipat tarif wajar (<strong className="text-slate-900 font-bold">ambang 3.0978x</strong>), sistem langsung menandainya sebagai anomali tagihan yang perlu dinegosiasikan ulang.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 <div className="p-3 bg-white/80 rounded-xl border border-slate-200/70">
-                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Fitur 1</span>
+                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Faktor 1</span>
                   <span className="text-xs font-bold text-slate-800">Jarak Tempuh (km)</span>
                 </div>
                 <div className="p-3 bg-white/80 rounded-xl border border-slate-200/70">
-                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Fitur 2</span>
+                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Faktor 2</span>
                   <span className="text-xs font-bold text-slate-800">Berat Paket (kg)</span>
                 </div>
                 <div className="p-3 bg-white/80 rounded-xl border border-slate-200/70">
-                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Fitur 3</span>
-                  <span className="text-xs font-bold text-slate-800">Volume Kubik (cm³)</span>
+                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Faktor 3</span>
+                  <span className="text-xs font-bold text-slate-800">Volume Kotak (cm³)</span>
                 </div>
                 <div className="p-3 bg-white/80 rounded-xl border border-slate-200/70">
-                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Fitur 4</span>
-                  <span className="text-xs font-bold text-slate-800">Densitas (g/cm³)</span>
+                  <span className="text-[10px] uppercase text-slate-400 font-semibold block">Faktor 4</span>
+                  <span className="text-xs font-bold text-slate-800">Kepadatan (g/cm³)</span>
                 </div>
               </div>
             </div>
@@ -119,14 +119,14 @@ export function InteractiveDetectorTabs() {
           <div className="p-6 sm:p-8 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-900/5 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
             <div className="lg:col-span-7 space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-slate-200/80 text-slate-800 text-xs font-semibold">
-                <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
-                <span>HistGradientBoostingClassifier • F1 85.94%</span>
+                <TrendingDown className="w-3.5 h-3.5 text-amber-500" />
+                <span>Pelindung Margin Penjual • F1-Score 85.94%</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Deteksi Pesanan Tidak Ekonomis yang Menggerus Margin
+                Mencegah Ongkos Kirim Menyerap Laba Penjualan Produk
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Mendeteksi transaksi di mana ongkos kirim menyerap porsi berlebih (<strong className="text-slate-900 font-bold">&gt;50%</strong>) dari harga jual produk. Menghindarkan penjual dari ilusi omzet tinggi namun laba operasional riil tergerus beban logistik.
+                Mendeteksi transaksi di mana ongkos kirim menyerap porsi berlebih (<strong className="text-slate-900 font-bold">&gt;50%</strong>) dari harga jual barang. Fitur ini melindungi penjual dari ilusi omzet besar yang sebenarnya menghasilkan laba minus akibat beban subsidi pengiriman rute jauh.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
