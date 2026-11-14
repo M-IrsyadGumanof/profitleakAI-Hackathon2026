@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <main key={pathname} className="flex-1 w-full">
+    <main key={pathname} className="flex-1 w-full pt-20 sm:pt-24">
       {children}
     </main>
   );

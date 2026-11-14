@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { AdvicePanel } from "../components/AdvicePanel";
+import { getAdvice } from "../lib/api";
+import type { AdviceResponse } from "../lib/types";
 import { 
   AlertTriangle, 
   ArrowLeft, 
@@ -405,6 +408,71 @@ export default function DashboardPage() {
     }).format(val);
   };
 
+  // State Rekomendasi Saran AI (Google Gemini LLM / Rule-Based Fallback)
+  // Sesuai perancangan/pembagian_tugas_gemini.txt bagian Ihqfal
+  const [advice, setAdvice] = useState<AdviceResponse | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState<boolean>(false);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
+
+  // Pulihkan hasil saran AI dari sessionStorage jika sudah ada (agar tidak hilang saat navigasi/tab switch)
+  useEffect(() => {
+    try {
+      const storedAdvice = sessionStorage.getItem("profitleak_advice");
+      if (storedAdvice) {
+        const parsed = JSON.parse(storedAdvice);
+        if (parsed && (parsed.headline || parsed.ringkasan)) {
+          setAdvice(parsed);
+        }
+      }
+    } catch {
+      // Abaikan jika storage kosong atau JSON corrupt
+    }
+  }, []);
+
+  // Handler Permintaan Saran AI (dipanggil saat tombol diklik atau retry)
+  const handleFetchAdvice = async () => {
+    setAdviceLoading(true);
+    setAdviceError(null);
+
+    try {
+      const payload = {
+        filename: data.filename || "transaksi.csv",
+        threshold: safeThreshold,
+        summary: {
+          analysed: data.summary.analysed,
+          leaks: data.summary.leaks,
+          rate_leaks: data.summary.rate_leaks,
+          margin_risks: data.summary.margin_risks,
+          estimated_loss: data.summary.estimated_loss,
+          leak_rate: data.summary.leak_rate,
+        },
+        rows: auditRows.map((r) => ({
+          line: r.line,
+          predicted_rate: r.predicted_rate,
+          actual_rate: r.actual_rate,
+          ratio: r.ratio,
+          freight_ratio: r.freight_ratio,
+          is_leak: r.is_leak,
+          risk_score: r.risk_score,
+          detectors: r.detectors,
+        })),
+      };
+
+      const result = await getAdvice(payload);
+      setAdvice(result);
+      try {
+        sessionStorage.setItem("profitleak_advice", JSON.stringify(result));
+      } catch {
+        // Abaikan jika kuota storage penuh
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal memproses rekomendasi saran AI.";
+      setAdviceError(errMsg);
+    } finally {
+      setAdviceLoading(false);
+    }
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col gap-6">
       {/* Peringatan: dashboard menampilkan data contoh, bukan hasil upload */}
@@ -523,11 +591,23 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-500">Normal</span>
           </div>
           <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <Layers className="w-3.5 h-3.5 text-[#1E40AF]" />
             Dual-Detector Proteksi Aktif
           </div>
         </div>
       </div>
+
+      {/* Panel Rekomendasi Saran AI (Google Gemini LLM / Rule-Based) */}
+      <AdvicePanel
+        data={advice}
+        loading={adviceLoading}
+        error={adviceError}
+        onRetry={handleFetchAdvice}
+        onSelectLine={(line) => {
+          setActiveTab("table");
+          setSearchQuery(String(line));
+        }}
+      />
 
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 gap-6">
@@ -535,7 +615,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("overview")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "overview"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -545,7 +625,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("table")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "table"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -555,7 +635,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("simulator")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "simulator"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -604,7 +684,7 @@ export default function DashboardPage() {
                                 <div className="mt-1 space-y-0.5 text-slate-600">
                                   <div>Tarif Aktual: {formatBRL(d.actual_rate)}</div>
                                   <div>Tarif Wajar: {formatBRL(d.predicted_rate)}</div>
-                                  <div className="font-bold text-blue-600">
+                                  <div className="font-bold text-[#1E40AF]">
                                     Rasio: {d.ratio}x
                                   </div>
                                   <div className={d.is_leak ? "text-rose-600 font-bold" : "text-emerald-600"}>
@@ -619,12 +699,12 @@ export default function DashboardPage() {
                       />
                       <ReferenceLine
                         y={safeThreshold}
-                        stroke="#ef4444"
+                        stroke="#f43f5e"
                         strokeDasharray="4 4"
                         label={{
                           value: `Ambang ${safeThreshold.toFixed(2)}x`,
                           position: "top",
-                          fill: "#ef4444",
+                          fill: "#f43f5e",
                           fontSize: 10,
                         }}
                       />
@@ -632,7 +712,7 @@ export default function DashboardPage() {
                         {auditRows.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={entry.is_leak ? "#ef4444" : "#2563eb"}
+                            fill={entry.is_leak ? "#f43f5e" : "#1e40af"}
                           />
                         ))}
                       </Bar>
@@ -644,7 +724,7 @@ export default function DashboardPage() {
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-blue-600"></span>
+                    <span className="w-3 h-3 rounded bg-[#1E40AF]"></span>
                     <span>Tarif Wajar (&le; {safeThreshold.toFixed(2)}x)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -683,10 +763,10 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-blue-600" />
+                        <Truck className="w-4 h-4 text-[#1E40AF]" />
                         <span className="text-xs font-bold text-slate-900">Overcharge Ekspedisi</span>
                       </div>
-                      <span className="text-xs font-bold text-blue-600">
+                      <span className="text-xs font-bold text-[#1E40AF]">
                         {data.reason_breakdown.rate_exceeds_fair || 0} kasus
                       </span>
                     </div>
@@ -866,7 +946,7 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-blue-600" />
+                  <Sliders className="w-5 h-5 text-[#1E40AF]" />
                   Parameter Paket Transaksi
                 </h3>
                 <span className="text-xs text-slate-500">Mata Uang: BRL (R$)</span>
@@ -986,7 +1066,7 @@ export default function DashboardPage() {
 
           <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <div>
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider block">
                 Hasil Evaluasi AI
               </span>
               <h3 className="text-lg font-bold text-slate-900 mt-1">
@@ -1017,7 +1097,7 @@ export default function DashboardPage() {
               <div className="mt-5 space-y-2.5 text-xs text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Estimasi Tarif Wajar:</span>
-                  <span className="font-bold text-blue-600">{formatBRL(simulatorResult.predictedRate)}</span>
+                  <span className="font-bold text-[#1E40AF]">{formatBRL(simulatorResult.predictedRate)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Tarif Aktual:</span>

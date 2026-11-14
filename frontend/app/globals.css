@@ -2,38 +2,117 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ==========================================================================
+   TIPOGRAFI RESMI: MiSans Latin (Xiaomi Inc.)
+   Wajib digunakan di seluruh aplikasi sampai akar-akarnya.
+   ========================================================================== */
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-ExtraLight.woff2') format('woff2');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Normal.woff2') format('woff2');
+  font-weight: 450;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Demibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Semibold.woff2') format('woff2');
+  font-weight: 650;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MiSans Latin';
+  src: url('/fonts/misans/MiSansLatin-Heavy.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark, .dark *));
 
 :root {
   color-scheme: light;
+  --font-sans: 'MiSans Latin', system-ui, -apple-system, sans-serif;
+  --font-mono: 'MiSans Latin', system-ui, -apple-system, sans-serif;
   --background: #f8fafc;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #2563eb;
+  --primary: #1e40af;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
+  --accent: #e0f2fe;
   --accent-foreground: #0f172a;
-  --destructive: #ef4444;
+  --destructive: #f43f5e;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #cbd5e1;
-  --ring: #2563eb;
-  --chart-1: #2563eb;
-  --chart-2: #ef4444;
+  --ring: #1e40af;
+  --chart-1: #1e40af;
+  --chart-2: #f43f5e;
   --chart-3: #10b981;
   --chart-4: #f59e0b;
-  --chart-5: #8b5cf6;
+  --chart-5: #38bdf8;
   --radius: 0.625rem;
 }
 
 @theme inline {
+  --font-sans: 'MiSans Latin', system-ui, -apple-system, sans-serif;
+  --font-mono: 'MiSans Latin', system-ui, -apple-system, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -55,17 +134,16 @@
   --color-ring: var(--ring);
 }
 
+*, *::before, *::after, html, body, button, input, select, textarea, code, pre, kbd, samp {
+  font-family: 'MiSans Latin', system-ui, -apple-system, sans-serif !important;
+}
+
+.font-mono {
+  font-family: 'MiSans Latin', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'tnum' 1;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-}
-
-input, button, select, textarea {
-  font-family: inherit;
-}
-
-/* Spinner input number rapi */
-input[type="number"] {
-  color-scheme: light;
 }

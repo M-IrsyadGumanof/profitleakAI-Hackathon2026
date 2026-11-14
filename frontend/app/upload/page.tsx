@@ -195,14 +195,14 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col gap-8">
-      {/* Header Halaman */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-200">
+    <div className="pt-2 sm:pt-4 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto flex flex-col gap-6">
+      {/* Header Halaman (Jarak proporsional di bawah floating navbar) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Unggah Dataset Transaksi
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Unggah file CSV transaksi pengiriman untuk dianalisis oleh sistem audit ProfitLeak.
           </p>
         </div>
@@ -218,78 +218,90 @@ export default function UploadPage() {
         </div>
       </div>
 
-      {/* Box Notifikasi Error */}
+      {/* Box Notifikasi Error (Layout Netral, Hanya Ikon yang Berwarna) */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/90 text-slate-800 shadow-sm flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="flex-1 text-sm">
-            <span className="font-bold block">Pemberitahuan Validasi:</span>
-            <span>{errorMessage}</span>
+            <span className="font-bold text-slate-900 block">Pemberitahuan Validasi:</span>
+            <span className="text-slate-600">{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-500 hover:text-rose-700 p-1"
+            className="text-slate-400 hover:text-slate-600 p-1 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Drag & Drop Area */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
-          isDragging
-            ? "border-blue-500 bg-blue-50/50 scale-[1.005]"
-            : file
-            ? "border-emerald-300 bg-emerald-50/20"
-            : "border-slate-300 hover:border-slate-400 bg-white"
-        }`}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files && e.target.files[0]) {
-              handleProcessFile(e.target.files[0]);
-            }
-            // Kosongkan value agar memilih file yang sama dua kali tetap memicu onChange.
-            e.target.value = "";
-          }}
-        />
+      {/* Area Upload: Terletak Presisi di Atas Permukaan Kubus 3D */}
+      {/* Elemen 3D yang sama dari beranda bertransisi mulus ke tengah sebagai panggung datar tanpa kotak gelap */}
+      <div className="relative w-full flex items-center justify-center my-2 sm:my-3 min-h-[350px] sm:min-h-[400px]">
+        <div
+          data-dropzone="true"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`relative z-10 w-full max-w-xl min-h-[310px] sm:min-h-[350px] p-6 sm:p-8 text-center cursor-pointer flex flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-300 select-none ${
+            isDragging
+              ? "border-sky-400 bg-sky-500/15 shadow-2xl shadow-sky-500/30 scale-[1.02]"
+              : file
+              ? "border-sky-400/80 bg-slate-900/40 backdrop-blur-xs shadow-lg shadow-sky-500/10"
+              : "border-sky-400/60 hover:border-sky-300 bg-slate-900/30 hover:bg-slate-900/45 backdrop-blur-[2px] shadow-xl hover:shadow-2xl hover:shadow-sky-500/20"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                handleProcessFile(e.target.files[0]);
+              }
+              // Kosongkan value agar memilih file yang sama dua kali tetap memicu onChange.
+              e.target.value = "";
+            }}
+          />
 
-        <div className="flex flex-col items-center justify-center gap-3">
+          {/* Ikon Upload & Status */}
           <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-              file ? "bg-emerald-100 text-emerald-600" : "bg-blue-50 text-blue-600"
+            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center backdrop-blur-md transition-all duration-300 ${
+              file
+                ? "bg-white/20 text-white border border-white/30 shadow-lg scale-105"
+                : isDragging
+                ? "bg-[#38BDF8]/30 text-white border border-[#38BDF8] scale-110 shadow-xl shadow-sky-500/30"
+                : "bg-white/10 text-sky-200 border border-white/20 shadow-md group-hover:scale-105"
             }`}
           >
-            {file ? <CheckCircle2 className="w-7 h-7" /> : <UploadCloud className="w-7 h-7" />}
+            {file ? (
+              <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" />
+            ) : (
+              <UploadCloud className="w-7 h-7 sm:w-8 sm:h-8 text-sky-300" />
+            )}
           </div>
 
-          <div>
-            <h3 className="text-base font-bold text-slate-900">
-              {file ? file.name : "Tarik & lepaskan file CSV Anda ke sini"}
+          {/* Teks Instruksi di Permukaan Datar Kubus 3D */}
+          <div className="mt-4 space-y-1 max-w-md">
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-wide drop-shadow-md">
+              {file ? file.name : "Letakkan Dokumen CSV di Sini"}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-sky-100/90 leading-relaxed drop-shadow-sm">
               {file
-                ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diproses`
-                : "atau klik untuk memilih file dari komputer Anda (Maksimal 50.000 baris)"}
+                ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diaudit sistem`
+                : "Tarik & lepaskan file CSV ke permukaan kubus atau klik tombol di bawah (Maksimal 50.000 baris)"}
             </p>
           </div>
 
           {!file && (
             <button
               type="button"
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 active:bg-slate-200 rounded-xl border border-white/60 shadow-lg hover:shadow-xl transition-all"
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              Pilih Dokumen CSV
+              <FileSpreadsheet className="w-4 h-4 text-[#1E40AF]" />
+              <span>Pilih Dokumen CSV</span>
             </button>
           )}
         </div>
@@ -297,16 +309,16 @@ export default function UploadPage() {
 
       {/* Preset Demo Helper */}
       {!file && (
-        <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="text-xs text-slate-700">
+            <Sparkles className="w-4 h-4 text-[#1E40AF] shrink-0" />
+            <span className="text-xs text-slate-700 font-medium">
               Ingin uji coba cepat tanpa menyiapkan file CSV sendiri?
             </span>
           </div>
           <button
             onClick={handleLoadDemoDataset}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded-md shadow-xs transition-colors shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#1E40AF] bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors shrink-0"
           >
             Gunakan Data Sampel (12 Baris)
           </button>
@@ -315,13 +327,13 @@ export default function UploadPage() {
 
       {/* Preview Ringkasan File */}
       {file && csvPreview && (
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-4">
+        <div className="p-6 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-md flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-blue-600" />
+              <FileText className="w-5 h-5 text-[#1E40AF]" />
               <div>
                 <h4 className="text-sm font-bold text-slate-900">{file.name}</h4>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 tabular-nums">
                   {csvPreview.rows} baris transaksi terdeteksi
                 </span>
               </div>
@@ -335,15 +347,15 @@ export default function UploadPage() {
                 setIsLoading(false);
                 resetFileInput();
               }}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors"
             >
               Ganti File
             </button>
           </div>
 
           {/* Cuplikan Header CSV */}
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 overflow-x-auto text-[11px] font-mono text-slate-600">
-            <div className="font-semibold text-slate-800 mb-1">Cuplikan Baris Pertama:</div>
+          <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 overflow-x-auto text-[11px] tabular-nums text-slate-600">
+            <div className="font-bold text-slate-800 mb-1">Cuplikan Baris Pertama:</div>
             {csvPreview.previewLines.map((line, idx) => (
               <div key={idx} className="whitespace-nowrap py-0.5">
                 {line}
@@ -356,7 +368,7 @@ export default function UploadPage() {
             <button
               onClick={handleSubmitAnalysis}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <>
@@ -375,46 +387,46 @@ export default function UploadPage() {
       )}
 
       {/* Petunjuk Format Kolom */}
-      <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs">
+      <div className="p-6 sm:p-7 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-blue-600" />
+          <HelpCircle className="w-4 h-4 text-[#1E40AF]" />
           Spesifikasi Format Kolom CSV
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 text-xs space-y-1">
             <span className="font-bold text-slate-900 block mb-1">
               Kolom Wajib (Required):
             </span>
             <ul className="space-y-1.5 text-slate-600 list-disc list-inside">
               <li>
-                <code className="font-semibold text-slate-800">weight_kg</code>: Berat paket dalam kilogram (0.05 - 30.0 kg).
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">weight_kg</code>: Berat paket dalam kilogram (0.05 - 30.0 kg).
               </li>
               <li>
-                <code className="font-semibold text-slate-800">distance_km</code>: Jarak kirim Haversine penjual-pembeli (km).
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">distance_km</code>: Jarak kirim Haversine penjual-pembeli (km).
               </li>
               <li>
-                <code className="font-semibold text-slate-800">volume_cm3</code>: Volume fisik paket ($P \times L \times T$).
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">volume_cm3</code>: Volume fisik paket ($P \times L \times T$).
               </li>
               <li>
-                <code className="font-semibold text-slate-800">price</code>: Harga barang dalam mata uang BRL (R$).
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">price</code>: Harga barang dalam mata uang BRL (R$).
               </li>
             </ul>
           </div>
 
-          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 text-xs space-y-1">
             <span className="font-bold text-slate-900 block mb-1">
               Kolom Opsional:
             </span>
             <ul className="space-y-1.5 text-slate-600 list-disc list-inside">
               <li>
-                <code className="font-semibold text-slate-800">freight_value</code> / <code className="font-semibold text-slate-800">actual_rate</code>: Ongkir aktual yang dibayarkan ke ekspedisi.
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">freight_value</code>: Ongkir aktual yang dibayarkan ke ekspedisi.
               </li>
               <li>
-                <code className="font-semibold text-slate-800">product_weight_g</code>: Berat dalam gram (untuk kalkulasi kepadatan).
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">product_weight_g</code>: Berat dalam gram (untuk kalkulasi kepadatan).
               </li>
               <li>
-                <code className="font-semibold text-slate-800">length_cm, height_cm, width_cm</code>: Dimensi paket individual.
+                <code className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">length_cm, height_cm, width_cm</code>: Dimensi paket individual.
               </li>
             </ul>
           </div>
