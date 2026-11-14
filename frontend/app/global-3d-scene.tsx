@@ -198,6 +198,18 @@ export function Global3DScene() {
     let curCubeRotZ = 0.2;
     let curCubeScale = 0.65; // skala pada home (kubus proporsional di dalam perisai)
 
+    let shieldSpinY = 0;
+    let cubeSpinY = 0.78;
+
+    // Helper: Menghitung selisih sudut terpendek dalam rentang [-PI, PI]
+    // Mencegah akumulasi putaran liar (winding up) saat berpindah antar halaman
+    const shortestAngleDiff = (target: number, current: number): number => {
+      let diff = (target - current) % (Math.PI * 2);
+      if (diff > Math.PI) diff -= Math.PI * 2;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      return diff;
+    };
+
     let mouseNormX = 0;
     let mouseNormY = 0;
 
@@ -268,18 +280,22 @@ export function Global3DScene() {
         targetPosZ = 0;
         targetScale = isDesktop ? 1.08 : 0.8;
 
+        // Akumulasi rotasi terbatas per-frame (dimodulo 2*PI agar tidak menumpuk tanpa batas)
+        shieldSpinY = (shieldSpinY + delta * 0.25) % (Math.PI * 2);
+        cubeSpinY = (cubeSpinY + delta * 0.5) % (Math.PI * 2);
+
         // Perisai aktif berotasi lembut & merespons kursor
         targetShieldZ = 0;
         targetShieldScale = 1.0;
         targetShieldRotX = -mouseNormY * 0.45;
-        targetShieldRotY = mouseNormX * 0.55 + elapsed * 0.2;
+        targetShieldRotY = shieldSpinY + mouseNormX * 0.45;
         targetShieldOpacity = 1.0;
 
         // Kubus berada di dalam perisai, berotasi isometrik proporsional
         targetCubeZ = 0;
         targetCubeScale = 0.58;
         targetCubeRotX = 0.65 + Math.sin(elapsed * 1.2) * 0.15;
-        targetCubeRotY = 0.78 + elapsed * 0.45;
+        targetCubeRotY = cubeSpinY;
         targetCubeRotZ = 0.2;
       } else if (currentPath === "/upload") {
         // --- MODE UNGGAH FILE (UPLOAD) ---
@@ -292,7 +308,7 @@ export function Global3DScene() {
         targetPosZ = 0;
         targetScale = isDesktop ? 1.0 : 0.85;
 
-        // Perisai: berada di belakang, agak diblur/redup, DIAM MENETAP (rotasi 0)
+        // Perisai: berada di belakang, agak diblur/redup, DIAM MENETAP menghadap lurus
         targetShieldZ = -2.6;
         targetShieldScale = 1.6;
         targetShieldRotX = 0; // Diam menetap
@@ -305,6 +321,10 @@ export function Global3DScene() {
         targetCubeRotX = 0; // Datar sejajar lurus ke depan
         targetCubeRotY = 0; // Tidak menyerong!
         targetCubeRotZ = 0;
+
+        // Reset base spin saat di upload agar saat kembali ke home tidak terjadi lonjakan rotasi
+        shieldSpinY = 0;
+        cubeSpinY = 0;
       } else {
         // Halaman lain (seperti /dashboard): sembunyikan secara anggun
         targetScale = 0;
@@ -312,7 +332,7 @@ export function Global3DScene() {
       }
 
       // =========================================================================
-      // Interpolasi Halus (Smooth Spring Damping)
+      // Interpolasi Halus (Smooth Spring Damping dengan Shortest Angle Difference)
       // =========================================================================
       const lerpSpeed = 0.065; // Transisi mulus sinematik
 
@@ -324,12 +344,15 @@ export function Global3DScene() {
       rootGroup.position.set(curPosX, curPosY, curPosZ);
       rootGroup.scale.set(curScale, curScale, curScale);
 
-      // Perisai interpolasi
+      // Perisai interpolasi dengan shortest angle difference
       curShieldZ += (targetShieldZ - curShieldZ) * lerpSpeed;
       curShieldScale += (targetShieldScale - curShieldScale) * lerpSpeed;
-      curShieldRotX += (targetShieldRotX - curShieldRotX) * lerpSpeed;
-      curShieldRotY += (targetShieldRotY - curShieldRotY) * lerpSpeed;
+      curShieldRotX += shortestAngleDiff(targetShieldRotX, curShieldRotX) * lerpSpeed;
+      curShieldRotY += shortestAngleDiff(targetShieldRotY, curShieldRotY) * lerpSpeed;
       curShieldOpacity += (targetShieldOpacity - curShieldOpacity) * lerpSpeed;
+
+      // Normalisasi sudut perisai ke [-PI, PI]
+      curShieldRotY = ((curShieldRotY % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
 
       shieldGroup.position.z = curShieldZ;
       shieldGroup.scale.set(curShieldScale, curShieldScale, curShieldScale);
@@ -337,12 +360,15 @@ export function Global3DScene() {
       shieldMaterial.opacity = curShieldOpacity;
       shieldMaterial.roughness = THREE.MathUtils.lerp(0.22, 0.65, 1 - curShieldOpacity);
 
-      // Kubus interpolasi
+      // Kubus interpolasi dengan shortest angle difference (mencegah putaran berlebih / winding-up)
       curCubeZ += (targetCubeZ - curCubeZ) * lerpSpeed;
       curCubeScale += (targetCubeScale - curCubeScale) * lerpSpeed;
-      curCubeRotX += (targetCubeRotX - curCubeRotX) * lerpSpeed;
-      curCubeRotY += (targetCubeRotY - curCubeRotY) * lerpSpeed;
-      curCubeRotZ += (targetCubeRotZ - curCubeRotZ) * lerpSpeed;
+      curCubeRotX += shortestAngleDiff(targetCubeRotX, curCubeRotX) * lerpSpeed;
+      curCubeRotY += shortestAngleDiff(targetCubeRotY, curCubeRotY) * lerpSpeed;
+      curCubeRotZ += shortestAngleDiff(targetCubeRotZ, curCubeRotZ) * lerpSpeed;
+
+      // Normalisasi sudut kubus ke [-PI, PI] agar tidak terakumulasi ke angka raksasa
+      curCubeRotY = ((curCubeRotY % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
 
       cubeGroup.position.z = curCubeZ;
       cubeGroup.scale.set(curCubeScale, curCubeScale, curCubeScale);
