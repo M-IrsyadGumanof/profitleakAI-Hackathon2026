@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Navbar } from "./nav";
-import { Global3DScene } from "./global-3d-scene";
 import { AppShell } from "./app-shell";
 import "./globals.css";
 
@@ -67,9 +66,6 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${miSans.variable} font-sans h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans">
-        {/* Persistent Global 3D Model: Bertransisi mulus antar halaman tanpa render ulang */}
-        <Global3DScene />
-
         {/* Dynamic Global Navbar */}
         <Navbar />
 

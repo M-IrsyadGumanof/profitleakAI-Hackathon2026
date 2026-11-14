@@ -15,6 +15,7 @@ import { InteractiveWorkflow } from "./components/interactive-workflow";
 import { InteractiveFAQ } from "./components/interactive-faq";
 import { RealWorldContext } from "./components/real-world-context";
 import { ScrollReveal } from "./components/scroll-reveal";
+import { Hero3D } from "./hero-3d";
 
 export default function HomePage() {
   return (
@@ -85,9 +86,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Kolom Kanan: Area Terbuka untuk Elemen 3D Persisten (Berdampingan dengan Judul Besar) */}
-          <div className="lg:col-span-5 min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] w-full relative pointer-events-none flex items-center justify-center">
-            {/* Elemen 3D persisten dari Global3DScene ditampilkan di sini secara presisi */}
+          {/* Kolom Kanan: 3D Interlocking Shield & 4x4 Cube Logo (Lokal & 120 FPS Ringan) */}
+          <div className="lg:col-span-5 min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] w-full relative flex items-center justify-center">
+            <Hero3D />
           </div>
 
         </section>

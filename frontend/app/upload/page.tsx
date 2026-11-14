@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { LiquidCanvas } from "./liquid-canvas";
 import { 
   AlertCircle, 
   ArrowRight, 
@@ -235,72 +236,66 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Area Upload: Terletak Presisi di Atas Permukaan Kubus 3D */}
-      {/* Elemen 3D yang sama dari beranda bertransisi mulus ke tengah sebagai panggung datar tanpa kotak gelap */}
-      <div className="relative w-full flex items-center justify-center my-2 sm:my-3 min-h-[350px] sm:min-h-[400px]">
-        <div
-          data-dropzone="true"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`relative z-10 w-full max-w-xl min-h-[310px] sm:min-h-[350px] p-6 sm:p-8 text-center cursor-pointer flex flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-300 select-none ${
-            isDragging
-              ? "border-sky-400 bg-sky-500/15 shadow-2xl shadow-sky-500/30 scale-[1.02]"
-              : file
-              ? "border-sky-400/80 bg-slate-900/40 backdrop-blur-xs shadow-lg shadow-sky-500/10"
-              : "border-sky-400/60 hover:border-sky-300 bg-slate-900/30 hover:bg-slate-900/45 backdrop-blur-[2px] shadow-xl hover:shadow-2xl hover:shadow-sky-500/20"
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                handleProcessFile(e.target.files[0]);
-              }
-              // Kosongkan value agar memilih file yang sama dua kali tetap memicu onChange.
-              e.target.value = "";
-            }}
-          />
+      {/* Area Drag & Drop dengan Efek Interaktif Netlify Aurora & Fluid Liquid */}
+      <div
+        data-dropzone="true"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`relative overflow-hidden border-2 border-dashed rounded-3xl min-h-[340px] sm:min-h-[380px] p-8 sm:p-12 text-center cursor-pointer flex flex-col items-center justify-center transition-all select-none ${
+          isDragging
+            ? "border-sky-400 shadow-xl shadow-sky-500/20 scale-[1.005]"
+            : file
+            ? "border-sky-400/80 shadow-lg shadow-sky-500/10"
+            : "border-slate-700/80 hover:border-sky-400/80 shadow-lg shadow-slate-900/10"
+        }`}
+      >
+        {/* Interactive Netlify Aurora + Liquid Shader */}
+        <LiquidCanvas isDragging={isDragging} />
 
-          {/* Ikon Upload & Status */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              handleProcessFile(e.target.files[0]);
+            }
+            // Kosongkan value agar memilih file yang sama dua kali tetap memicu onChange.
+            e.target.value = "";
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center justify-center gap-3.5 max-w-lg select-none">
           <div
-            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center backdrop-blur-md transition-all duration-300 ${
+            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
               file
-                ? "bg-white/20 text-white border border-white/30 shadow-lg scale-105"
-                : isDragging
-                ? "bg-[#38BDF8]/30 text-white border border-[#38BDF8] scale-110 shadow-xl shadow-sky-500/30"
-                : "bg-white/10 text-sky-200 border border-white/20 shadow-md group-hover:scale-105"
+                ? "bg-sky-500/20 text-sky-400 border border-sky-400/30"
+                : "bg-sky-500/20 text-sky-300 border border-sky-400/30 shadow-inner"
             }`}
           >
-            {file ? (
-              <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" />
-            ) : (
-              <UploadCloud className="w-7 h-7 sm:w-8 sm:h-8 text-sky-300" />
-            )}
+            {file ? <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" /> : <UploadCloud className="w-7 h-7 sm:w-8 sm:h-8" />}
           </div>
 
-          {/* Teks Instruksi di Permukaan Datar Kubus 3D */}
-          <div className="mt-4 space-y-1 max-w-md">
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-wide drop-shadow-md">
-              {file ? file.name : "Letakkan Dokumen CSV di Sini"}
+          <div>
+            <h3 className="text-base sm:text-xl font-bold text-white tracking-wide drop-shadow-sm">
+              {file ? file.name : "Tarik & lepaskan file CSV Anda ke sini"}
             </h3>
-            <p className="text-xs sm:text-sm text-sky-100/90 leading-relaxed drop-shadow-sm">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 drop-shadow-sm">
               {file
-                ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diaudit sistem`
-                : "Tarik & lepaskan file CSV ke permukaan kubus atau klik tombol di bawah (Maksimal 50.000 baris)"}
+                ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diproses`
+                : "atau klik untuk memilih file dari komputer Anda (Maksimal 50.000 baris)"}
             </p>
           </div>
 
           {!file && (
             <button
               type="button"
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 active:bg-slate-200 rounded-xl border border-white/60 shadow-lg hover:shadow-xl transition-all"
+              className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 backdrop-blur-md transition-all shadow-sm"
             >
-              <FileSpreadsheet className="w-4 h-4 text-[#1E40AF]" />
+              <FileSpreadsheet className="w-4 h-4 text-sky-300" />
               <span>Pilih Dokumen CSV</span>
             </button>
           )}
