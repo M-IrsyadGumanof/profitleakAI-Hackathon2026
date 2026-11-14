@@ -100,7 +100,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Kolom Tengah: 3 Tombol Navigasi (Teks saat terbuka -> Ikon SVG saat mengerucut) */}
+          {/* Kolom Tengah: 3 Tombol Navigasi (Murni Fade Out Teks & Fade In Ikon SVG, Tanpa Gerakan) */}
           <div className="flex items-center justify-center shrink-0">
             <nav className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-full border border-slate-200/80 shadow-xs">
               {navItems.map((item) => {
@@ -116,7 +116,7 @@ export function Navbar() {
                     href={item.href}
                     title={item.label}
                     aria-label={item.label}
-                    className={`relative flex items-center justify-center h-8 rounded-full overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] select-none shrink-0 ${
+                    className={`relative flex items-center justify-center h-8 rounded-full overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none shrink-0 ${
                       isActive
                         ? "bg-[#1E40AF] text-white font-bold shadow-xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium"
@@ -126,23 +126,23 @@ export function Navbar() {
                         : "px-3.5 sm:px-4 text-xs"
                     }`}
                   >
-                    {/* Teks Label (Terbuka: Tampil | Mengerucut: Melipat ke lebar 0) */}
+                    {/* Teks Label: Murni Fade Out saat mengerucut, Fade In saat terbuka */}
                     <span
-                      className={`whitespace-nowrap overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      className={`whitespace-nowrap transition-opacity duration-200 ease-in-out ${
                         isScrolled
-                          ? "max-w-0 opacity-0 pointer-events-none scale-90"
-                          : "max-w-[130px] opacity-100 scale-100"
+                          ? "opacity-0 pointer-events-none"
+                          : "opacity-100"
                       }`}
                     >
                       {item.label}
                     </span>
 
-                    {/* Ikon Konteks SVG (Terbuka: Tersembunyi | Mengerucut: Muncul anggun) */}
+                    {/* Ikon Konteks SVG: Murni Fade In saat mengerucut, Fade Out saat terbuka */}
                     <span
-                      className={`flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      className={`absolute inset-0 flex items-center justify-center transition-opacity duration-250 ease-in-out ${
                         isScrolled
-                          ? "max-w-[20px] opacity-100 scale-100"
-                          : "max-w-0 opacity-0 pointer-events-none scale-75"
+                          ? "opacity-100 delay-75"
+                          : "opacity-0 pointer-events-none"
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" strokeWidth={2.2} />
