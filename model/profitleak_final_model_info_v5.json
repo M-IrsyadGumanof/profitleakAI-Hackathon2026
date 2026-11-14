@@ -1,76 +1,109 @@
 {
     "project": "ProfitLeak AI",
-    "version": "v5",
-    "approach": "Model tarif ongkir + residual satu arah + normalisasi drift",
+    "version": "v6",
+    "approach": "Multi-detektor: tarif ongkir + risiko margin ongkir/harga + anomaly. Perluasan dari v5 yang hanya memodelkan ongkir.",
     "rate_model": "HistGradientBoostingRegressor",
     "rate_features": [
         "weight_kg",
         "distance_km",
         "volume_cm3",
-        "price_log"
+        "price_log",
+        "density_g_cm3"
     ],
-    "threshold": 1.102309,
+    "threshold": 3.024937,
     "threshold_quantile": 0.998,
-    "baseline_median_residual": -0.011977,
-    "r2_train": 0.7465,
-    "r2_test": 0.7227,
+    "baseline_median_residual": -0.0086,
+    "r2_train": 0.807,
+    "r2_test": 0.7407,
     "training_data": 78181,
     "validation_data": 16753,
     "testing_data": 16754,
-    "false_positive_rate": 0.17,
-    "detection_rate": {
-        "1x": 0.2,
-        "1.5x": 1.4,
-        "2x": 3.6,
-        "3x": 34.6,
-        "5x": 97.6,
-        "10x": 99.0
+    "feature_variant_decision": "Varian B DITOLAK: R2 melonjak +0.2555 (indikasi target leakage karena fitur turunan memakai freight_value). Varian A dipakai.",
+    "r2_variant_compare": {
+        "A_safe": 0.7407,
+        "B_with_freight_features": 0.9963,
+        "chosen": "A_safe"
     },
-    "validation_summary": {
-        "Kontrol": 0.28,
-        "Ongkir 2x": 4.36,
-        "Ongkir 3x": 33.8,
-        "Ongkir 5x": 97.24,
-        "Ongkir 10x": 99.0
-    },
-    "drift_protection": [
-        {
-            "Kenaikan Tarif": "1.0x",
-            "Drift Terdeteksi": 0.002,
-            "Tanpa Proteksi (%)": 0.17,
-            "Dengan Proteksi (%)": 0.17
+    "detectors": {
+        "rate": {
+            "description": "Tarif ongkir wajar; leak bila rasio aktual/wajar > threshold.",
+            "threshold": 3.024937,
+            "threshold_residual_log": 1.078419
         },
-        {
-            "Kenaikan Tarif": "1.25x",
-            "Drift Terdeteksi": 0.212,
-            "Tanpa Proteksi (%)": 0.48,
-            "Dengan Proteksi (%)": 0.17
+        "margin": {
+            "description": "Model klasifikasi memprediksi risiko transaksi tidak ekonomis (ongkir menyerap >50% harga). Input TANPA freight_value.",
+            "features": [
+                "weight_kg",
+                "distance_km",
+                "volume_cm3",
+                "density_g_cm3",
+                "price_log"
+            ],
+            "threshold": 0.46,
+            "threshold_type": "probabilitas"
         },
-        {
-            "Kenaikan Tarif": "1.5x",
-            "Drift Terdeteksi": 0.386,
-            "Tanpa Proteksi (%)": 1.25,
-            "Dengan Proteksi (%)": 0.17
-        },
-        {
-            "Kenaikan Tarif": "2.0x",
-            "Drift Terdeteksi": 0.661,
-            "Tanpa Proteksi (%)": 4.28,
-            "Dengan Proteksi (%)": 0.18
-        },
-        {
-            "Kenaikan Tarif": "3.0x",
-            "Drift Terdeteksi": 1.055,
-            "Tanpa Proteksi (%)": 34.74,
-            "Dengan Proteksi (%)": 0.19
+        "anomaly": {
+            "description": "Kombinasi fitur tidak wajar (IsolationForest).",
+            "features": [
+                "weight_kg",
+                "distance_km",
+                "volume_cm3",
+                "price_log",
+                "density_g_cm3",
+                "freight_ratio"
+            ],
+            "contamination": 0.02
         }
-    ],
-    "segmen_harga": {
-        "Q1 (termurah)": 0.12,
-        "Q2": 0.12,
-        "Q3": 0.22,
-        "Q4 (termahal)": 0.21
     },
+    "evaluation_test": {
+        "definition_of_real_loss": "freight_value / price > 0.5 (ongkir menyerap >50% harga jual = transaksi tidak ekonomis)",
+        "rate": {
+            "tp": 20,
+            "fp": 10,
+            "fn": 2815,
+            "tn": 13909,
+            "flagged": 30,
+            "precision": 0.6667,
+            "recall": 0.0071,
+            "f1": 0.014
+        },
+        "margin": {
+            "tp": 2357,
+            "fp": 293,
+            "fn": 478,
+            "tn": 13626,
+            "flagged": 2650,
+            "precision": 0.8894,
+            "recall": 0.8314,
+            "f1": 0.8594
+        },
+        "anomaly": {
+            "tp": 90,
+            "fp": 256,
+            "fn": 2745,
+            "tn": 13663,
+            "flagged": 346,
+            "precision": 0.2601,
+            "recall": 0.0317,
+            "f1": 0.0566
+        },
+        "combined": {
+            "tp": 2393,
+            "fp": 552,
+            "fn": 442,
+            "tn": 13367,
+            "flagged": 2945,
+            "precision": 0.8126,
+            "recall": 0.8441,
+            "f1": 0.828
+        }
+    },
+    "data_limitations": [
+        "Dataset Olist tidak memiliki kolom harga modal (cost/COGS/HPP).",
+        "Dataset Olist tidak memiliki kolom diskon resmi.",
+        "Oleh karena itu model TIDAK mendeteksi kerugian akibat modal terlalu tinggi atau diskon kelewat besar; dibutuhkan dataset yang memuat kolom tersebut beserta label kerugian.",
+        "Deteksi berbasis besaran harga jual dan ongkir yang benar-benar ada."
+    ],
     "valid_ranges": {
         "weight_kg": [
             0.05,
@@ -78,7 +111,7 @@
         ],
         "distance_km": [
             1.4896,
-            3135.7885
+            3135.7928
         ],
         "volume_cm3": [
             352.0,
@@ -87,7 +120,62 @@
         "price": [
             4.99,
             2110.0
+        ],
+        "freight_ratio": [
+            0.0066,
+            3.214
         ]
     },
-    "currency": "BRL"
+    "currency": "BRL",
+    "model_rating": {
+        "score": 71.5,
+        "grade": "B (baik)",
+        "components": [
+            {
+                "name": "R2 uji (regresi tarif)",
+                "value": 0.7407,
+                "weight": 0.45,
+                "points": 33.33
+            },
+            {
+                "name": "F1 detektor margin",
+                "value": 0.8594,
+                "weight": 0.2,
+                "points": 17.19
+            },
+            {
+                "name": "F1 gabungan",
+                "value": 0.828,
+                "weight": 0.2,
+                "points": 16.56
+            },
+            {
+                "name": "F1 detektor anomaly",
+                "value": 0.0566,
+                "weight": 0.05,
+                "points": 0.28
+            },
+            {
+                "name": "F1 detektor rate",
+                "value": 0.014,
+                "weight": 0.05,
+                "points": 0.07
+            },
+            {
+                "name": "Precision gabungan",
+                "value": 0.8126,
+                "weight": 0.05,
+                "points": 4.06
+            }
+        ],
+        "notes": [
+            "Rating dihitung transparan dari metrik uji, bukan penilaian subjektif.",
+            "Ground truth: freight_value/price > 0.5 (ongkir menyerap >50% harga jual = transaksi tidak ekonomis)",
+            "R2 uji 0.7407: model menjelaskan ~74.1% variasi tarif. Sudah diuji hyperparameter (iter 400-3000, lr 0.03-0.08, leaf 31-127) dan feature engineering tambahan; R2 mentok ~0.74 = batas informasi data.",
+            "Detektor margin adalah model klasifikasi yang memprediksi risiko dari ciri paket + harga TANPA memakai freight_value sebagai input (precision 0.889, recall 0.831). Ini pembelajaran nyata, bukan aturan yang menyalin definisi label.",
+            "Detektor rate lemah untuk kerugian jenis ini karena median rasio tarif pada transaksi tidak ekonomis hanya ~1.0x. Ini batas konsep, bukan bug.",
+            "Detektor anomaly adalah IsolationForest; cocok untuk outlier ekstrem, kurang cocok untuk klasifikasi risiko (F1 rendah). Bobotnya kecil.",
+            "Batas data: tidak ada kolom modal/diskon, sehingga aspek itu tidak dinilai."
+        ]
+    }
 }
