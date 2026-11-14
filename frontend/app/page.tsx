@@ -316,7 +316,7 @@ export default function ProfitLeakDashboard() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold tracking-tight">ProfitLeak AI</span>
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-mono">
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 ">
                   v5.0
                 </Badge>
               </div>
@@ -327,7 +327,7 @@ export default function ProfitLeakDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-mono text-[11px] font-normal">
+            <Badge variant="secondary" className=" text-[11px] font-normal">
               R²: 72.3% • FPR: 0.17%
             </Badge>
           </div>
@@ -363,7 +363,7 @@ export default function ProfitLeakDashboard() {
                 <CardTitle className="text-sm font-semibold tracking-tight">
                   Parameter Transaksi
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] font-mono">
+                <Badge variant="outline" className="text-[10px] ">
                   Input Fitur
                 </Badge>
               </div>
@@ -398,7 +398,7 @@ export default function ProfitLeakDashboard() {
                         max="100"
                         value={weightKg}
                         onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs font-mono pr-7"
+                        className="h-8 text-xs pr-7"
                         required
                       />
                       <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
@@ -424,7 +424,7 @@ export default function ProfitLeakDashboard() {
                         max="6000"
                         value={distanceKm}
                         onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs font-mono pr-7"
+                        className="h-8 text-xs pr-7"
                         required
                       />
                       <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
@@ -441,7 +441,7 @@ export default function ProfitLeakDashboard() {
                       <Maximize2 className="size-3 text-muted-foreground" />
                       Dimensi (P × L × T cm)
                     </Label>
-                    <span className="font-mono text-[10px] text-muted-foreground">
+                    <span className=" text-[10px] text-muted-foreground">
                       Vol: {volumeCm3.toLocaleString()} cm³
                     </span>
                   </div>
@@ -452,7 +452,7 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={lengthCm}
                         onChange={(e) => setLengthCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs font-mono text-center pr-4"
+                        className="h-8 text-xs text-center pr-4"
                         placeholder="P"
                       />
                       <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
@@ -465,7 +465,7 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={widthCm}
                         onChange={(e) => setWidthCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs font-mono text-center pr-4"
+                        className="h-8 text-xs text-center pr-4"
                         placeholder="L"
                       />
                       <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
@@ -478,7 +478,7 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={heightCm}
                         onChange={(e) => setHeightCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs font-mono text-center pr-4"
+                        className="h-8 text-xs text-center pr-4"
                         placeholder="T"
                       />
                       <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
@@ -501,7 +501,7 @@ export default function ProfitLeakDashboard() {
                       <span className="text-[10px] text-muted-foreground">BRL</span>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground font-mono">
+                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground ">
                         R$
                       </span>
                       <Input
@@ -511,7 +511,7 @@ export default function ProfitLeakDashboard() {
                         min="0.1"
                         value={price}
                         onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs font-mono pl-7"
+                        className="h-8 text-xs pl-7"
                         required
                       />
                     </div>
@@ -526,7 +526,7 @@ export default function ProfitLeakDashboard() {
                       <span className="text-[10px] text-muted-foreground">Kurir</span>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground font-mono">
+                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground ">
                         R$
                       </span>
                       <Input
@@ -536,7 +536,7 @@ export default function ProfitLeakDashboard() {
                         min="0.01"
                         value={actualFreight}
                         onChange={(e) => setActualFreight(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs font-mono font-semibold pl-7"
+                        className="h-8 text-xs font-semibold pl-7"
                         required
                       />
                     </div>
@@ -613,7 +613,7 @@ export default function ProfitLeakDashboard() {
                         </div>
                       </div>
 
-                      <Badge variant="outline" className="font-mono text-[10px]">
+                      <Badge variant="outline" className=" text-[10px]">
                         {result.source === "api" ? "FastAPI Live" : "Engine v5"}
                       </Badge>
                     </div>
@@ -628,7 +628,7 @@ export default function ProfitLeakDashboard() {
                           <TrendingUp className="size-4 text-destructive" />
                           Estimasi Selisih Kerugian:
                         </span>
-                        <span className="text-sm font-bold font-mono text-destructive">
+                        <span className="text-sm font-bold text-destructive">
                           R$ {result.potentialLoss.toFixed(2)} BRL
                         </span>
                       </div>
@@ -642,7 +642,7 @@ export default function ProfitLeakDashboard() {
                     <span className="text-[10px] text-muted-foreground block">
                       Ongkir Wajar (AI)
                     </span>
-                    <p className="text-base font-bold font-mono mt-1 text-foreground">
+                    <p className="text-base font-bold mt-1 text-foreground">
                       R$ {result.predictedRate.toFixed(2)}
                     </p>
                     <span className="text-[9px] text-muted-foreground">Baseline Model</span>
@@ -653,7 +653,7 @@ export default function ProfitLeakDashboard() {
                       Ongkir Ditagihkan
                     </span>
                     <p
-                      className={`text-base font-bold font-mono mt-1 ${
+                      className={`text-base font-bold mt-1 ${
                         result.isLeak ? "text-destructive" : "text-foreground"
                       }`}
                     >
@@ -667,7 +667,7 @@ export default function ProfitLeakDashboard() {
                       Rasio Tagihan/Wajar
                     </span>
                     <p
-                      className={`text-base font-bold font-mono mt-1 ${
+                      className={`text-base font-bold mt-1 ${
                         result.ratio > 2.0 ? "text-destructive" : "text-foreground"
                       }`}
                     >
@@ -683,7 +683,7 @@ export default function ProfitLeakDashboard() {
                       Residual vs Ambang
                     </span>
                     <p
-                      className={`text-base font-bold font-mono mt-1 ${
+                      className={`text-base font-bold mt-1 ${
                         result.residual > result.threshold ? "text-destructive" : "text-foreground"
                       }`}
                     >
@@ -734,7 +734,7 @@ export default function ProfitLeakDashboard() {
                                     <div className="mt-1 flex items-center gap-1.5">
                                       <span className="text-slate-400">Nilai:</span>
                                       <span
-                                        className={`font-mono font-bold ${
+                                        className={` font-bold ${
                                           isActual && result.isLeak
                                             ? "text-red-400"
                                             : isActual
@@ -785,7 +785,7 @@ export default function ProfitLeakDashboard() {
                         <p>
                           Lakukan audit terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
                           Potensi penghematan biaya logistik sebesar{" "}
-                          <strong className="text-foreground font-mono">
+                          <strong className="text-foreground ">
                             R$ {result.potentialLoss.toFixed(2)} BRL
                           </strong>{" "}
                           dapat diajukan sebagai klaim penyesuaian tarif.
