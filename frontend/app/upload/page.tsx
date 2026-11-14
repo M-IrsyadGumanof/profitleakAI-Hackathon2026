@@ -365,7 +365,7 @@ export default function UploadPage() {
         }`}
       >
         {/* Interactive Liquid Wave Effect (Netlify Style) */}
-        <LiquidCanvas isHovering={isDragging} />
+        <LiquidCanvas />
 
         <input
           ref={fileInputRef}

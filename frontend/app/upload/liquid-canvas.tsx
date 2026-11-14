@@ -2,33 +2,16 @@
 
 import { useEffect, useRef } from "react";
 
-interface LiquidRipple {
-  x: number;
-  y: number;
-  radius: number;
-  maxRadius: number;
-  speed: number;
-  strength: number;
-  alpha: number;
-  wavelength: number;
-}
-
-interface LiquidCanvasProps {
-  className?: string;
-  isHovering?: boolean;
-}
-
-export function LiquidCanvas({ className }: LiquidCanvasProps = {}) {
+export function LiquidCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    // Cari elemen dropzone terdekat
     const dropzone = canvas.closest("[data-dropzone]") as HTMLElement | null;
     if (!dropzone) return;
 
@@ -36,191 +19,200 @@ export function LiquidCanvas({ className }: LiquidCanvasProps = {}) {
     let width = 0;
     let height = 0;
 
-    // Koordinat kursor mouse dengan easing halus (fluid trailing)
-    let mouseX = -1000;
-    let mouseY = -1000;
-    let smoothMouseX = -1000;
-    let smoothMouseY = -1000;
-    let isHovering = false;
-    let lastEmitX = -1000;
-    let lastEmitY = -1000;
+    // Grid fluida ChromaFlow (64x64 grid untuk fluid advection yang sangat halus & 60fps)
+    const GRID_SIZE = 64;
+    const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
 
-    const ripples: LiquidRipple[] = [];
+    // Buffer kecepatan (Vx, Vy) dan densitas fluida (Dye)
+    let vx = new Float32Array(TOTAL_CELLS);
+    let vy = new Float32Array(TOTAL_CELLS);
+    let density = new Float32Array(TOTAL_CELLS);
+    let nextDensity = new Float32Array(TOTAL_CELLS);
+    let nextVx = new Float32Array(TOTAL_CELLS);
+    let nextVy = new Float32Array(TOTAL_CELLS);
+
+    let lastMouseX = -1;
+    let lastMouseY = -1;
+    let lastTime = performance.now();
+
+    const offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = GRID_SIZE;
+    offscreenCanvas.height = GRID_SIZE;
+    const offscreenCtx = offscreenCanvas.getContext("2d");
+    let imgData: ImageData | null = null;
+    if (offscreenCtx) {
+      imgData = offscreenCtx.createImageData(GRID_SIZE, GRID_SIZE);
+    }
 
     const updateSize = () => {
       const rect = dropzone.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = Math.floor(rect.width);
       height = Math.floor(rect.height);
 
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      ctx.scale(dpr, dpr);
+      canvas.width = width;
+      canvas.height = height;
     };
 
     updateSize();
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateSize();
-    });
+    const resizeObserver = new ResizeObserver(() => updateSize());
     resizeObserver.observe(dropzone);
 
-    // Fungsi membuat riak gelombang air
-    const emitRipple = (x: number, y: number, strength = 1.0, maxRadius = 140) => {
-      ripples.push({
-        x,
-        y,
-        radius: 0,
-        maxRadius,
-        speed: 2.2 + strength * 1.2,
-        strength,
-        alpha: 0.65 * strength,
-        wavelength: 22 + strength * 8,
-      });
+    // Menambahkan impuls fluida ChromaFlow di posisi kursor
+    const addFluidImpulse = (
+      px: number,
+      py: number,
+      velX: number,
+      velY: number,
+      speed: number
+    ) => {
+      const gx = (px / width) * GRID_SIZE;
+      const gy = (py / height) * GRID_SIZE;
+      const radius = 3.5;
 
-      // Batasi jumlah gelombang aktif agar performa tetap 60fps
-      if (ripples.length > 25) {
-        ripples.shift();
+      const rInt = Math.ceil(radius);
+      for (let dy = -rInt; dy <= rInt; dy++) {
+        for (let dx = -rInt; dx <= rInt; dx++) {
+          const distSq = dx * dx + dy * dy;
+          if (distSq <= radius * radius) {
+            const cx = Math.floor(gx + dx);
+            const cy = Math.floor(gy + dy);
+            if (cx >= 1 && cx < GRID_SIZE - 1 && cy >= 1 && cy < GRID_SIZE - 1) {
+              const idx = cy * GRID_SIZE + cx;
+              const falloff = Math.exp(-distSq / (radius * 1.5));
+
+              // Suntikkan momentum kecepatan dan partikel fluida
+              vx[idx] += velX * falloff * 0.4;
+              vy[idx] += velY * falloff * 0.4;
+              density[idx] = Math.min(1.0, density[idx] + speed * falloff * 0.25);
+            }
+          }
+        }
       }
     };
 
-    // Event listener mouse langsung pada elemen dropzone
     const handleMouseMove = (e: MouseEvent) => {
       const rect = dropzone.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      mouseX = x;
-      mouseY = y;
-      isHovering = true;
+      const now = performance.now();
+      const dt = Math.max(0.001, (now - lastTime) / 1000);
+      lastTime = now;
 
-      if (smoothMouseX < 0) {
-        smoothMouseX = x;
-        smoothMouseY = y;
+      if (lastMouseX >= 0 && lastMouseY >= 0) {
+        const dx = x - lastMouseX;
+        const dy = y - lastMouseY;
+        const speed = Math.min(30, Math.hypot(dx, dy));
+
+        if (speed > 0.5) {
+          const velX = (dx / dt) * 0.015;
+          const velY = (dy / dt) * 0.015;
+          addFluidImpulse(x, y, velX, velY, speed);
+        }
       }
 
-      // Hitung jarak dari riak sebelumnya
-      const distFromLast = Math.hypot(x - lastEmitX, y - lastEmitY);
-      if (distFromLast > 16) {
-        const speed = Math.min(2.5, distFromLast / 8);
-        emitRipple(x, y, speed, 120 + speed * 30);
-        lastEmitX = x;
-        lastEmitY = y;
-      }
+      lastMouseX = x;
+      lastMouseY = y;
     };
 
     const handleMouseEnter = (e: MouseEvent) => {
       const rect = dropzone.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      mouseX = x;
-      mouseY = y;
-      smoothMouseX = x;
-      smoothMouseY = y;
-      isHovering = true;
-
-      // Percikan gelombang awal saat mouse masuk
-      emitRipple(x, y, 1.8, 160);
-      emitRipple(x, y, 1.2, 110);
+      lastMouseX = e.clientX - rect.left;
+      lastMouseY = e.clientY - rect.top;
+      lastTime = performance.now();
+      addFluidImpulse(lastMouseX, lastMouseY, 0, 1.5, 8);
     };
 
     const handleMouseLeave = () => {
-      isHovering = false;
-      mouseX = -1000;
-      mouseY = -1000;
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      const rect = dropzone.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // Multi-ring ripple saat di-klik
-      emitRipple(x, y, 2.5, 220);
-      setTimeout(() => emitRipple(x, y, 1.8, 160), 60);
-      setTimeout(() => emitRipple(x, y, 1.2, 110), 120);
+      lastMouseX = -1;
+      lastMouseY = -1;
     };
 
     dropzone.addEventListener("mousemove", handleMouseMove);
     dropzone.addEventListener("mouseenter", handleMouseEnter);
     dropzone.addEventListener("mouseleave", handleMouseLeave);
-    dropzone.addEventListener("click", handleClick);
 
-    // Animasi rendering gelombang cairan
+    // Loop simulasi fluida & adveksi momentum (Semi-Lagrangian Advection ala Netlify)
     const render = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Easing pergerakan kursor fluida
-      if (isHovering && mouseX >= 0) {
-        smoothMouseX += (mouseX - smoothMouseX) * 0.18;
-        smoothMouseY += (mouseY - smoothMouseY) * 0.18;
-
-        // 1. Fluid Cursor Spotlight (Aksen cairan lembut yang mengikuti kursor)
-        const glowRadius = 90;
-        const auraGrad = ctx.createRadialGradient(
-          smoothMouseX,
-          smoothMouseY,
-          0,
-          smoothMouseX,
-          smoothMouseY,
-          glowRadius
-        );
-        // Tetap menggunakan warna asli produk (Royal Blue transparan)
-        auraGrad.addColorStop(0, "rgba(37, 99, 235, 0.14)");
-        auraGrad.addColorStop(0.4, "rgba(59, 130, 246, 0.08)");
-        auraGrad.addColorStop(0.8, "rgba(147, 197, 253, 0.03)");
-        auraGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-        ctx.fillStyle = auraGrad;
-        ctx.beginPath();
-        ctx.arc(smoothMouseX, smoothMouseY, glowRadius, 0, Math.PI * 2);
-        ctx.fill();
+      if (!offscreenCtx || !imgData || width === 0 || height === 0) {
+        animId = requestAnimationFrame(render);
+        return;
       }
 
-      // 2. Render riak gelombang air konsentris
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const r = ripples[i];
-        r.radius += r.speed;
+      const decay = 0.94; // Disipasi partikel air alami
+      const dt = 0.8;
 
-        // Fade out alami saat radius mendekati batas maksimum
-        const progress = r.radius / r.maxRadius;
-        const currentAlpha = r.alpha * (1 - progress);
+      // 1. Adveksi & pembaruan fluida
+      for (let y = 1; y < GRID_SIZE - 1; y++) {
+        const row = y * GRID_SIZE;
+        for (let x = 1; x < GRID_SIZE - 1; x++) {
+          const idx = row + x;
 
-        if (progress >= 1 || currentAlpha <= 0.01) {
-          ripples.splice(i, 1);
-          continue;
+          // Trace balik koordinat fluida (Semi-Lagrangian trace back)
+          const srcX = x - vx[idx] * dt;
+          const srcY = y - vy[idx] * dt;
+
+          // Bilinear interpolation
+          const x0 = Math.max(0, Math.min(GRID_SIZE - 2, Math.floor(srcX)));
+          const y0 = Math.max(0, Math.min(GRID_SIZE - 2, Math.floor(srcY)));
+          const x1 = x0 + 1;
+          const y1 = y0 + 1;
+
+          const s1 = srcX - x0;
+          const s0 = 1 - s1;
+          const t1 = srcY - y0;
+          const t0 = 1 - t1;
+
+          const d00 = density[y0 * GRID_SIZE + x0];
+          const d10 = density[y0 * GRID_SIZE + x1];
+          const d01 = density[y1 * GRID_SIZE + x0];
+          const d11 = density[y1 * GRID_SIZE + x1];
+
+          nextDensity[idx] =
+            (s0 * (t0 * d00 + t1 * d01) + s1 * (t0 * d10 + t1 * d11)) * decay;
+
+          nextVx[idx] = vx[idx] * 0.91;
+          nextVy[idx] = vy[idx] * 0.91;
         }
+      }
 
-        ctx.save();
+      // Salin buffer
+      density.set(nextDensity);
+      vx.set(nextVx);
+      vy.set(nextVy);
 
-        // Lingkaran gelombang luar (bias cahaya cairan)
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.lineWidth = Math.max(1, r.wavelength * (1 - progress * 0.7));
-        ctx.strokeStyle = `rgba(37, 99, 235, ${currentAlpha * 0.45})`;
-        ctx.stroke();
+      // 2. Render permukaan cairan ke ImageData dengan gradien refraksi lembut
+      const data = imgData.data;
+      let hasActiveLiquid = false;
 
-        // Lingkaran puncak gelombang dalam (specular light shine)
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, Math.max(1, r.radius - 4), 0, Math.PI * 2);
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = `rgba(96, 165, 250, ${currentAlpha * 0.8})`;
-        ctx.stroke();
+      for (let i = 0; i < TOTAL_CELLS; i++) {
+        const pIdx = i * 4;
+        const d = density[i];
 
-        // Highlight putih halus di punggung gelombang
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, Math.max(1, r.radius - 2), 0, Math.PI * 2);
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = `rgba(255, 255, 255, ${currentAlpha * 0.95})`;
-        ctx.stroke();
+        if (d > 0.015) {
+          hasActiveLiquid = true;
+          // Warna fluida Royal Blue (#2563eb) transparan tanpa mengubah warna asli
+          const alpha = Math.min(110, Math.floor(d * 180));
+          data[pIdx] = 37;      // R: 37
+          data[pIdx + 1] = 99;  // G: 99
+          data[pIdx + 2] = 235; // B: 235
+          data[pIdx + 3] = alpha;
+        } else {
+          data[pIdx + 3] = 0;
+        }
+      }
 
-        ctx.restore();
+      ctx.clearRect(0, 0, width, height);
+
+      // Gambar ke canvas utama dengan bilinear filtering tinggi agar menjadi gradien cair yang mulus
+      if (hasActiveLiquid) {
+        offscreenCtx.putImageData(imgData, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(offscreenCanvas, 0, 0, width, height);
       }
 
       animId = requestAnimationFrame(render);
@@ -234,7 +226,6 @@ export function LiquidCanvas({ className }: LiquidCanvasProps = {}) {
       dropzone.removeEventListener("mousemove", handleMouseMove);
       dropzone.removeEventListener("mouseenter", handleMouseEnter);
       dropzone.removeEventListener("mouseleave", handleMouseLeave);
-      dropzone.removeEventListener("click", handleClick);
     };
   }, []);
 
@@ -242,7 +233,7 @@ export function LiquidCanvas({ className }: LiquidCanvasProps = {}) {
     <div className="absolute inset-0 pointer-events-none rounded-2xl overflow-hidden z-0">
       <canvas
         ref={canvasRef}
-        className="w-full h-full block filter blur-[0.5px]"
+        className="w-full h-full block filter blur-[6px] opacity-75 transition-opacity"
       />
     </div>
   );
