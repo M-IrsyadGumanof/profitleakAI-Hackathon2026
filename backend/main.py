@@ -24,18 +24,27 @@ dibaca ulang per request.
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import math
+import os
+import time
 import warnings
+from collections import OrderedDict
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import httpx
 import joblib
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
 # ---------------------------------------------------------------------------
@@ -49,6 +58,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = BASE_DIR / "model"
 MODEL_PATH = MODEL_DIR / "profitleak_final_model_v5.pkl"
 INFO_PATH = MODEL_DIR / "profitleak_final_model_info_v5.json"
+
+# --- Konfigurasi LLM (Gemini) untuk endpoint /api/advice ----------------
+# Key HANYA dibaca dari backend/.env (tidak pernah dikirim ke browser).
+# Bila kosong, fitur saran tetap berjalan dengan mode "rule_based".
+BACKEND_DIR = Path(__file__).resolve().parent
+load_dotenv(BACKEND_DIR / ".env")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+GEMINI_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_MODEL}:generateContent"
+)
+GEMINI_TIMEOUT_SECONDS = 20.0
+
+# Batas biaya/token: hanya ringkasan + N baris terburuk yang dikirim.
+ADVICE_MAX_ROWS = 5
+ADVICE_MAX_OUTPUT_TOKENS = 800
+ADVICE_TEMPERATURE = 0.3
+
+# Ongkir dianggap sehat bila menyerap <= 30% harga jual.
+# Dipakai menghitung "harga jual minimal" DI PYTHON, bukan oleh LLM.
+ADVICE_TARGET_FREIGHT_SHARE = 0.3
+
+# Rate limit sederhana per IP (kuota aman saat demo).
+ADVICE_RATE_LIMIT = 5
+ADVICE_RATE_WINDOW_SECONDS = 60.0
+
+# Cache hasil agar klik ulang tidak memanggil Gemini lagi.
+ADVICE_CACHE_MAX_ENTRIES = 32
 
 # Urutan fitur WAJIB sama dengan model (rate_model.feature_names_in_).
 # Sejak v6 ada fitur turunan tambahan: density_g_cm3.
@@ -336,6 +375,29 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Ubah error validasi Pydantic (422) menjadi 400 + `detail` berupa STRING.
+
+    Kontrak API (docs/API_CONTRACT.md bagian F) mewajibkan seluruh kesalahan
+    input dikembalikan sebagai HTTP 400 dengan ``{"detail": "<pesan ramah>"}``
+    agar frontend cukup menampilkan ``detail`` apa adanya.
+    """
+    first = (exc.errors() or [{}])[0]
+    location = ".".join(
+        str(part) for part in first.get("loc", ()) if part not in ("body", "query")
+    )
+    message = first.get("msg", "Input tidak valid.")
+    detail = (
+        f"Kolom '{location}' tidak valid: {message}."
+        if location
+        else f"Input tidak valid: {message}."
+    )
+    return JSONResponse(status_code=400, content={"detail": detail})
+
+
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
@@ -483,6 +545,48 @@ class DetectLeakResponse(BaseModel):
     margin_risk_probability: float = 0.0
     detectors: dict[str, bool] = {}
     reasons: list[dict[str, str]] = []
+
+
+# --- Schema endpoint /api/advice (saran AI bahasa awam) --------------------
+
+
+class AdviceRowIn(BaseModel):
+    """Satu baris hasil analisis yang dikirim frontend (bukan CSV mentah)."""
+
+    line: int
+    predicted_rate: float = 0.0
+    actual_rate: float = 0.0
+    ratio: float = 0.0
+    freight_ratio: float = 0.0
+    is_leak: bool = False
+    risk_score: float = 0.0
+    detectors: dict[str, bool] = {}
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "line": 2,
+                    "predicted_rate": 11.55,
+                    "actual_rate": 55.0,
+                    "ratio": 4.76,
+                    "freight_ratio": 0.3438,
+                    "is_leak": True,
+                    "risk_score": 0.55,
+                    "detectors": {"rate": True, "margin": False},
+                }
+            ]
+        }
+    }
+
+
+class AdviceRequest(BaseModel):
+    """Input saran AI: agregat + baris hasil analisis dari /api/upload-csv."""
+
+    filename: str = ""
+    threshold: float | None = None
+    summary: dict[str, Any]
+    rows: list[AdviceRowIn] = []
 
 
 # ---------------------------------------------------------------------------
@@ -892,3 +996,453 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
         "rows": results,
         "skipped": skipped[:200],
     }
+
+# ---------------------------------------------------------------------------
+# Saran AI (LLM) via Gemini - POST /api/advice
+#
+# Prinsip:
+#   1. Ringkas dulu di Python (0 token), baru kirim ke LLM.
+#   2. Cakupan saran SEMPIT: hanya ongkir vs tarif wajar dan ongkir vs
+#      harga jual. HPP/modal/diskon tidak pernah dibahas.
+#   3. Angka "harga jual minimal" dihitung Python (ADVICE_TARGET_FREIGHT_SHARE),
+#      LLM hanya menarasikan agar tidak berhalusinasi.
+#   4. Tanpa API key / timeout / JSON rusak -> fallback rule_based, HTTP 200.
+# ---------------------------------------------------------------------------
+
+ADVICE_CACHE: "OrderedDict[str, dict[str, Any]]" = OrderedDict()
+ADVICE_RATE_BUCKETS: dict[str, list[float]] = {}
+
+ADVICE_SCOPE_NOTE = (
+    "Saran AI, bukan nasihat keuangan. Model tidak mencakup HPP "
+    "(modal), diskon, maupun laba bersih."
+)
+
+ADVICE_RESPONSE_SCHEMA: dict[str, Any] = {
+    "type": "OBJECT",
+    "properties": {
+        "headline": {"type": "STRING"},
+        "ringkasan": {"type": "STRING"},
+        "prioritas": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "judul": {"type": "STRING"},
+                    "dampak": {"type": "STRING"},
+                    "aksi": {"type": "ARRAY", "items": {"type": "STRING"}},
+                    "terdampak": {"type": "ARRAY", "items": {"type": "INTEGER"}},
+                },
+                "required": ["judul", "dampak", "aksi"],
+            },
+        },
+        "per_baris": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "line": {"type": "INTEGER"},
+                    "masalah": {"type": "STRING"},
+                    "saran_harga": {"type": "STRING"},
+                },
+                "required": ["line", "masalah"],
+            },
+        },
+    },
+    "required": ["headline", "ringkasan", "prioritas"],
+}
+
+ADVICE_SYSTEM_PROMPT = (
+    "Anda konsultan logistik untuk pedagang e-commerce kecil. "
+    "CAKUPAN HANYA: (1) ongkir aktual di atas tarif wajar, "
+    "(2) ongkir menyerap porsi besar dari harga jual. "
+    "DILARANG membahas: HPP/modal, diskon, iklan, pajak, retur, atau strategi "
+    "marketing. Gunakan HANYA angka yang ada pada data; jangan membuat angka "
+    "baru. Pakai bahasa sehari-hari tanpa jargon. "
+    "Batas keras: headline maks 12 kata, ringkasan maks 2 kalimat, "
+    "prioritas maks 3 item, tiap aksi maks 4 poin dan tiap poin maks 10 kata. "
+    "Balas HANYA JSON sesuai skema, tanpa penjelasan tambahan."
+)
+
+
+def _advice_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _advice_target_price(actual_rate: float) -> float:
+    """Harga jual minimal agar ongkir <= 30% harga (dihitung di Python)."""
+    if actual_rate <= 0 or ADVICE_TARGET_FREIGHT_SHARE <= 0:
+        return 0.0
+    return round(actual_rate / ADVICE_TARGET_FREIGHT_SHARE, 2)
+
+
+def _advice_float(value: Any, default: float = 0.0) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number if math.isfinite(number) else default
+
+
+def _advice_context(payload: AdviceRequest) -> dict[str, Any]:
+    """Ringkas payload menjadi konteks kecil untuk LLM (hemat token)."""
+    summary = payload.summary or {}
+    leaks = int(_advice_float(summary.get("leaks")))
+    analysed = int(_advice_float(summary.get("analysed")))
+    leak_rate = _advice_float(summary.get("leak_rate"))
+    threshold = payload.threshold if payload.threshold else _THRESHOLD
+
+    leak_rows = [row for row in payload.rows if row.is_leak]
+    leak_rows.sort(
+        key=lambda row: (_advice_float(row.risk_score), _advice_float(row.ratio)),
+        reverse=True,
+    )
+    top_rows = leak_rows[:ADVICE_MAX_ROWS]
+
+    rows_context = []
+    for row in top_rows:
+        actual_rate = _advice_float(row.actual_rate)
+        rows_context.append(
+            {
+                "line": row.line,
+                "tarif_aktual_brl": round(actual_rate, 2),
+                "tarif_wajar_brl": round(_advice_float(row.predicted_rate), 2),
+                "rasio_vs_wajar": round(_advice_float(row.ratio), 2),
+                "ongkir_persen_dari_harga": round(
+                    _advice_float(row.freight_ratio) * 100.0, 1
+                ),
+                "harga_jual_minimal_brl": _advice_target_price(actual_rate),
+                "detektor": [
+                    name
+                    for name, active in (row.detectors or {}).items()
+                    if active
+                ],
+            }
+        )
+
+    return {
+        "berkas": payload.filename,
+        "mata_uang": CURRENCY,
+        "ambang_rasio_tarif": threshold,
+        "total_transaksi": analysed,
+        "jumlah_terindikasi": leaks,
+        "persen_terindikasi": round(leak_rate, 1),
+        "jumlah_ongkir_terlalu_mahal": int(
+            _advice_float(summary.get("rate_leaks"))
+        ),
+        "jumlah_ongkir_menggerus_harga": int(
+            _advice_float(summary.get("margin_risks"))
+        ),
+        "estimasi_kelebihan_ongkir_brl": round(
+            _advice_float(summary.get("estimated_loss")), 2
+        ),
+        "baris_terburuk": rows_context,
+    }
+
+
+def _advice_static_safe(payload: AdviceRequest) -> dict[str, Any]:
+    """Jawaban tanpa LLM saat tidak ada kebocoran (0 token)."""
+    analysed = int(_advice_float((payload.summary or {}).get("analysed")))
+    return {
+        "source": "rule_based",
+        "generated_at": _advice_now_iso(),
+        "headline": "Tidak ada kebocoran ongkir yang terdeteksi",
+        "ringkasan": (
+            f"Dari {analysed} transaksi, ongkir semuanya masih dalam batas wajar "
+            f"dan tidak menggerus harga jual."
+        ),
+        "prioritas": [],
+        "per_baris": [],
+        "catatan": ADVICE_SCOPE_NOTE,
+    }
+
+
+def _advice_rule_based(
+    payload: AdviceRequest, context: dict[str, Any]
+) -> dict[str, Any]:
+    """Fallback deterministik bila Gemini tidak tersedia."""
+    leaks = int(context["jumlah_terindikasi"])
+    analysed = int(context["total_transaksi"])
+    loss = context["estimasi_kelebihan_ongkir_brl"]
+    rate_leaks = int(context["jumlah_ongkir_terlalu_mahal"])
+    margin_risks = int(context["jumlah_ongkir_menggerus_harga"])
+    threshold = context["ambang_rasio_tarif"]
+
+    prioritas: list[dict[str, Any]] = []
+    affected = [row["line"] for row in context["baris_terburuk"]]
+
+    if rate_leaks > 0:
+        prioritas.append(
+            {
+                "judul": "Negosiasi ulang tarif ekspedisi",
+                "dampak": f"Potensi hemat hingga R$ {loss:.2f}",
+                "aksi": [
+                    "Minta daftar tarif resmi dari ekspedisi",
+                    "Bandingkan minimal dua ekspedisi",
+                    "Terapkan tarif wajar sebagai batas negosiasi",
+                ],
+                "terdampak": affected,
+            }
+        )
+    if margin_risks > 0:
+        prioritas.append(
+            {
+                "judul": "Naikkan harga jual atau gabung pengiriman",
+                "dampak": "Ongkir turun di bawah 30% harga jual",
+                "aksi": [
+                    "Naikkan harga ke minimal yang tertera di tabel",
+                    "Gabungkan beberapa item dalam satu paket",
+                    "Terapkan minimum order untuk gratis ongkir",
+                ],
+                "terdampak": affected,
+            }
+        )
+
+    per_baris = [
+        {
+            "line": row["line"],
+            "masalah": (
+                f"Ongkir {row['rasio_vs_wajar']:.2f}x tarif wajar "
+                f"(ambang {float(threshold):.2f}x)"
+            ),
+            "saran_harga": (
+                f"Naikkan harga jual minimal ke R$ "
+                f"{row['harga_jual_minimal_brl']:.2f}"
+            ),
+        }
+        for row in context["baris_terburuk"]
+    ]
+
+    return {
+        "source": "rule_based",
+        "generated_at": _advice_now_iso(),
+        "headline": f"{leaks} dari {analysed} transaksi terindikasi bocor",
+        "ringkasan": (
+            f"Ongkir terlalu mahal pada {rate_leaks} transaksi dan menggerus "
+            f"harga jual pada {margin_risks} transaksi."
+        ),
+        "prioritas": prioritas,
+        "per_baris": per_baris,
+        "catatan": ADVICE_SCOPE_NOTE,
+    }
+
+
+def _advice_clip_words(text: Any, max_words: int) -> str:
+    words = str(text or "").split()
+    if len(words) > max_words:
+        return " ".join(words[:max_words]) + "..."
+    return " ".join(words)
+
+
+def _advice_clip_sentences(text: Any, max_sentences: int) -> str:
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+    parts: list[str] = []
+    current = ""
+    for char in raw:
+        current += char
+        if char in ".!?":
+            parts.append(current.strip())
+            current = ""
+            if len(parts) >= max_sentences:
+                break
+    if current.strip() and len(parts) < max_sentences:
+        parts.append(current.strip())
+    return " ".join(parts)
+
+
+def _advice_parse_response(
+    raw: Any, context: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Validasi & pangkas keluaran LLM. None bila tidak layak dipakai."""
+    if not isinstance(raw, dict):
+        return None
+
+    headline = _advice_clip_words(raw.get("headline"), 12)
+    ringkasan = _advice_clip_sentences(raw.get("ringkasan"), 2)
+    if not headline or not ringkasan:
+        return None
+
+    valid_lines = {row["line"] for row in context["baris_terburuk"]}
+    target_by_line = {
+        row["line"]: row["harga_jual_minimal_brl"]
+        for row in context["baris_terburuk"]
+    }
+
+    prioritas: list[dict[str, Any]] = []
+    for item in (raw.get("prioritas") or [])[:3]:
+        if not isinstance(item, dict):
+            continue
+        judul = _advice_clip_words(item.get("judul"), 8)
+        if not judul:
+            continue
+        aksi = [
+            _advice_clip_words(step, 10)
+            for step in (item.get("aksi") or [])
+            if str(step).strip()
+        ][:4]
+        terdampak = [
+            int(line)
+            for line in (item.get("terdampak") or [])
+            if isinstance(line, (int, float)) and int(line) in valid_lines
+        ][:ADVICE_MAX_ROWS]
+        prioritas.append(
+            {
+                "judul": judul,
+                "dampak": _advice_clip_words(item.get("dampak"), 12),
+                "aksi": aksi,
+                "terdampak": terdampak or sorted(valid_lines),
+            }
+        )
+
+    per_baris: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for item in raw.get("per_baris") or []:
+        if not isinstance(item, dict):
+            continue
+        try:
+            line = int(item.get("line"))
+        except (TypeError, ValueError):
+            continue
+        if line not in valid_lines or line in seen:
+            continue
+        seen.add(line)
+        saran = _advice_clip_words(item.get("saran_harga"), 14)
+        if not saran:
+            saran = (
+                f"Naikkan harga jual minimal ke R$ {target_by_line[line]:.2f}"
+            )
+        per_baris.append(
+            {
+                "line": line,
+                "masalah": _advice_clip_words(item.get("masalah"), 14),
+                "saran_harga": saran,
+            }
+        )
+
+    return {
+        "headline": headline,
+        "ringkasan": ringkasan,
+        "prioritas": prioritas,
+        "per_baris": per_baris,
+    }
+
+
+def _advice_prompt(context: dict[str, Any]) -> str:
+    return (
+        "Data hasil audit ongkir dalam format JSON. Buat saran perbaikan "
+        "yang singkat dan bisa langsung dijalankan pedagang.\n"
+        + json.dumps(context, ensure_ascii=False, separators=(",", ":"))
+    )
+
+
+async def _advice_call_gemini(context: dict[str, Any]) -> dict[str, Any] | None:
+    """Panggil Gemini sekali; None bila gagal (pemanggil pakai fallback)."""
+    if not GEMINI_API_KEY:
+        return None
+
+    body = {
+        "system_instruction": {"parts": [{"text": ADVICE_SYSTEM_PROMPT}]},
+        "contents": [{"role": "user", "parts": [{"text": _advice_prompt(context)}]}],
+        "generationConfig": {
+            "temperature": ADVICE_TEMPERATURE,
+            "maxOutputTokens": ADVICE_MAX_OUTPUT_TOKENS,
+            "responseMimeType": "application/json",
+            "responseSchema": ADVICE_RESPONSE_SCHEMA,
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=GEMINI_TIMEOUT_SECONDS) as client:
+            response = await client.post(
+                GEMINI_URL,
+                params={"key": GEMINI_API_KEY},
+                json=body,
+            )
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        candidate = (data.get("candidates") or [{}])[0]
+        text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
+        if not text:
+            return None
+        return json.loads(text)
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+        # Timeout, koneksi gagal, atau JSON rusak -> fallback rule_based.
+        return None
+
+
+def _advice_cache_get(key: str) -> dict[str, Any] | None:
+    cached = ADVICE_CACHE.get(key)
+    if cached is None:
+        return None
+    ADVICE_CACHE.move_to_end(key)
+    return dict(cached)
+
+
+def _advice_cache_put(key: str, value: dict[str, Any]) -> None:
+    ADVICE_CACHE[key] = value
+    ADVICE_CACHE.move_to_end(key)
+    while len(ADVICE_CACHE) > ADVICE_CACHE_MAX_ENTRIES:
+        ADVICE_CACHE.popitem(last=False)
+
+
+def _advice_check_rate_limit(ip: str) -> None:
+    now = time.monotonic()
+    window_start = now - ADVICE_RATE_WINDOW_SECONDS
+    timestamps = [
+        stamp
+        for stamp in ADVICE_RATE_BUCKETS.get(ip, [])
+        if stamp >= window_start
+    ]
+    if len(timestamps) >= ADVICE_RATE_LIMIT:
+        ADVICE_RATE_BUCKETS[ip] = timestamps
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "Terlalu banyak permintaan saran. Tunggu sekitar 1 menit "
+                "lalu coba lagi."
+            ),
+        )
+    timestamps.append(now)
+    ADVICE_RATE_BUCKETS[ip] = timestamps
+
+
+@app.post("/api/advice")
+async def advice(payload: AdviceRequest, request: Request) -> dict[str, Any]:
+    """Saran perbaikan berbahasa awam dari hasil analisis CSV.
+
+    Sumber saran: Gemini bila ``GEMINI_API_KEY`` tersedia, jika tidak
+    (atau saat Gemini gagal) memakai aturan deterministik ``rule_based``.
+    """
+    ip = request.client.host if request.client else "unknown"
+    _advice_check_rate_limit(ip)
+
+    context = _advice_context(payload)
+    if int(context["jumlah_terindikasi"]) <= 0:
+        # Tidak ada kebocoran: tidak perlu memanggil LLM sama sekali.
+        return _advice_static_safe(payload)
+
+    cache_key = hashlib.sha256(
+        json.dumps(context, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    cached = _advice_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    raw = await _advice_call_gemini(context)
+    parsed = _advice_parse_response(raw, context)
+
+    if parsed is None:
+        result = _advice_rule_based(payload, context)
+        result["generated_at"] = _advice_now_iso()
+    else:
+        result = {
+            "source": "gemini",
+            "generated_at": _advice_now_iso(),
+            **parsed,
+            "catatan": ADVICE_SCOPE_NOTE,
+        }
+
+    _advice_cache_put(cache_key, result)
+    return result

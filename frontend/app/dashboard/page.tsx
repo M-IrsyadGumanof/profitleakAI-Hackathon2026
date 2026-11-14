@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { AdvicePanel } from "../components/AdvicePanel";
+import { getAdvice } from "../lib/api";
+import type { AdviceResponse } from "../lib/types";
 import { 
   AlertTriangle, 
   ArrowLeft, 
@@ -291,8 +294,32 @@ const SIMULATOR_PRESETS = [
   },
 ];
 
+type AnalysisData = typeof DEFAULT_ANALYSIS_DATA;
+
+// Baca hasil analisis terakhir dari sessionStorage. Hanya hasil upload yang
+// valid yang dipakai; selain itu tampilkan data contoh + peringatan.
+function readStoredAnalysis(): { data: AnalysisData; hasStoredResult: boolean } {
+  if (typeof window === "undefined") {
+    return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
+  }
+  try {
+    const stored = sessionStorage.getItem("profitleak_analysis_result");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.summary && Array.isArray(parsed.rows)) {
+        return { data: parsed as AnalysisData, hasStoredResult: true };
+      }
+    }
+  } catch {
+    // rusak / tidak dapat diparse -> fallback ke data contoh
+  }
+  return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState(DEFAULT_ANALYSIS_DATA);
+  const [initial] = useState(readStoredAnalysis);
+  const [data] = useState<AnalysisData>(initial.data);
+  const hasStoredResult = initial.hasStoredResult;
   const [activeTab, setActiveTab] = useState<"overview" | "table" | "simulator">("overview");
   const [statusFilter, setStatusFilter] = useState<"all" | "leaks" | "normal">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -303,33 +330,31 @@ export default function DashboardPage() {
   const [simPrice, setSimPrice] = useState(150.0);
   const [simActualRate, setSimActualRate] = useState(24.5);
 
-  useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem("profitleak_analysis_result");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed && parsed.summary && parsed.rows) {
-          setData(parsed);
-        }
-      }
-    } catch {
-      // fallback to default
-    }
-  }, []);
+  const auditRows = useMemo(
+    () => (Array.isArray(data.rows) ? data.rows : []),
+    [data.rows]
+  );
 
   const filteredRows = useMemo(() => {
-    return data.rows.filter((row) => {
+    return auditRows.filter((row) => {
       if (statusFilter === "leaks" && !row.is_leak) return false;
       if (statusFilter === "normal" && row.is_leak) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const lineMatch = String(row.line).includes(q);
-        const reasonMatch = row.reasons.some((r) => r.detail.toLowerCase().includes(q));
+        // reasons bisa tidak ada pada respons yang tidak lengkap -> jangan crash.
+        const reasonMatch = (row.reasons ?? []).some((r) =>
+          String(r?.detail ?? "").toLowerCase().includes(q)
+        );
         return lineMatch || reasonMatch;
       }
       return true;
     });
-  }, [data.rows, statusFilter, searchQuery]);
+  }, [auditRows, statusFilter, searchQuery]);
+
+  // Threshold bisa berupa string/NaN dari payload yang tidak tervalidasi.
+  const threshold = Number(data.threshold);
+  const safeThreshold = Number.isFinite(threshold) && threshold > 0 ? threshold : 3.09779;
 
   const simulatorResult = useMemo(() => {
     const w = Math.max(0.05, Math.min(30.0, simWeight));
@@ -383,8 +408,94 @@ export default function DashboardPage() {
     }).format(val);
   };
 
+  // State Rekomendasi Saran AI (Google Gemini LLM / Rule-Based Fallback)
+  // Sesuai perancangan/pembagian_tugas_gemini.txt bagian Ihqfal
+  const [advice, setAdvice] = useState<AdviceResponse | null>(null);
+  const [adviceLoading, setAdviceLoading] = useState<boolean>(false);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
+
+  // Pulihkan hasil saran AI dari sessionStorage jika sudah ada (agar tidak hilang saat navigasi/tab switch)
+  useEffect(() => {
+    try {
+      const storedAdvice = sessionStorage.getItem("profitleak_advice");
+      if (storedAdvice) {
+        const parsed = JSON.parse(storedAdvice);
+        if (parsed && (parsed.headline || parsed.ringkasan)) {
+          setAdvice(parsed);
+        }
+      }
+    } catch {
+      // Abaikan jika storage kosong atau JSON corrupt
+    }
+  }, []);
+
+  // Handler Permintaan Saran AI (dipanggil saat tombol diklik atau retry)
+  const handleFetchAdvice = async () => {
+    setAdviceLoading(true);
+    setAdviceError(null);
+
+    try {
+      const payload = {
+        filename: data.filename || "transaksi.csv",
+        threshold: safeThreshold,
+        summary: {
+          analysed: data.summary.analysed,
+          leaks: data.summary.leaks,
+          rate_leaks: data.summary.rate_leaks,
+          margin_risks: data.summary.margin_risks,
+          estimated_loss: data.summary.estimated_loss,
+          leak_rate: data.summary.leak_rate,
+        },
+        rows: auditRows.map((r) => ({
+          line: r.line,
+          predicted_rate: r.predicted_rate,
+          actual_rate: r.actual_rate,
+          ratio: r.ratio,
+          freight_ratio: r.freight_ratio,
+          is_leak: r.is_leak,
+          risk_score: r.risk_score,
+          detectors: r.detectors,
+        })),
+      };
+
+      const result = await getAdvice(payload);
+      setAdvice(result);
+      try {
+        sessionStorage.setItem("profitleak_advice", JSON.stringify(result));
+      } catch {
+        // Abaikan jika kuota storage penuh
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Gagal memproses rekomendasi saran AI.";
+      setAdviceError(errMsg);
+    } finally {
+      setAdviceLoading(false);
+    }
+  };
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col gap-6">
+      {/* Peringatan: dashboard menampilkan data contoh, bukan hasil upload */}
+      {hasStoredResult === false && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+          <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm">
+            <span className="font-bold block">Belum ada hasil analisis</span>
+            <span>
+              Data di bawah adalah <strong>contoh (demo)</strong>, bukan hasil upload Anda.
+              Silakan unggah file CSV terlebih dahulu.
+            </span>
+          </div>
+          <Link
+            href="/upload"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 rounded-md transition-colors"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            Unggah CSV
+          </Link>
+        </div>
+      )}
+
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -433,7 +544,7 @@ export default function DashboardPage() {
           </div>
           <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            Ambang Rasio: {data.threshold.toFixed(2)}x
+            Ambang Rasio: {safeThreshold.toFixed(2)}x
           </div>
         </div>
 
@@ -486,6 +597,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Panel Rekomendasi Saran AI (Google Gemini LLM / Rule-Based) */}
+      <AdvicePanel
+        data={advice}
+        loading={adviceLoading}
+        error={adviceError}
+        onRetry={handleFetchAdvice}
+        onSelectLine={(line) => {
+          setActiveTab("table");
+          setSearchQuery(String(line));
+        }}
+      />
+
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 gap-6">
         <button
@@ -506,7 +629,7 @@ export default function DashboardPage() {
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          Tabel Audit Transaksi ({data.rows.length})
+          Tabel Audit Transaksi ({auditRows.length})
         </button>
         <button
           onClick={() => setActiveTab("simulator")}
@@ -532,7 +655,7 @@ export default function DashboardPage() {
                       Rasio Tarif Transaksi vs Ambang Batas Wajar
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Nilai rasio tarif aktual terhadap estimasi tarif wajar. Ambang batas anomali: {data.threshold.toFixed(2)}x.
+                      Nilai rasio tarif aktual terhadap estimasi tarif wajar. Ambang batas anomali: {safeThreshold.toFixed(2)}x.
                     </p>
                   </div>
                 </div>
@@ -540,7 +663,7 @@ export default function DashboardPage() {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={data.rows}
+                      data={auditRows}
                       margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
                     >
                       <XAxis
@@ -575,18 +698,18 @@ export default function DashboardPage() {
                         }}
                       />
                       <ReferenceLine
-                        y={data.threshold}
+                        y={safeThreshold}
                         stroke="#f43f5e"
                         strokeDasharray="4 4"
                         label={{
-                          value: `Ambang ${data.threshold.toFixed(2)}x`,
+                          value: `Ambang ${safeThreshold.toFixed(2)}x`,
                           position: "top",
                           fill: "#f43f5e",
                           fontSize: 10,
                         }}
                       />
                       <Bar dataKey="ratio" radius={[4, 4, 0, 0]}>
-                        {data.rows.map((entry, index) => (
+                        {auditRows.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={entry.is_leak ? "#f43f5e" : "#1e40af"}
@@ -602,11 +725,11 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded bg-[#1E40AF]"></span>
-                    <span>Tarif Wajar (&le; {data.threshold.toFixed(2)}x)</span>
+                    <span>Tarif Wajar (&le; {safeThreshold.toFixed(2)}x)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded bg-rose-500"></span>
-                    <span>Anomali / Bocor (&gt; {data.threshold.toFixed(2)}x)</span>
+                    <span>Anomali / Bocor (&gt; {safeThreshold.toFixed(2)}x)</span>
                   </div>
                 </div>
               </div>
@@ -703,7 +826,7 @@ export default function DashboardPage() {
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                Semua ({data.rows.length})
+                Semua ({auditRows.length})
               </button>
               <button
                 onClick={() => setStatusFilter("leaks")}
@@ -723,7 +846,7 @@ export default function DashboardPage() {
                     : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
                 }`}
               >
-                Normal ({data.rows.length - data.summary.leaks})
+                Normal ({auditRows.length - data.summary.leaks})
               </button>
             </div>
 
@@ -760,7 +883,7 @@ export default function DashboardPage() {
                     <td className="px-4 py-3 text-slate-700">{formatBRL(row.predicted_rate)}</td>
                     <td className="px-4 py-3 font-semibold text-slate-900">{formatBRL(row.actual_rate)}</td>
                     <td className="px-4 py-3">
-                      <span className={`font-semibold ${row.ratio > data.threshold ? "text-rose-600" : "text-slate-700"}`}>
+                      <span className={`font-semibold ${row.ratio > safeThreshold ? "text-rose-600" : "text-slate-700"}`}>
                         {row.ratio.toFixed(2)}x
                       </span>
                     </td>
@@ -796,7 +919,7 @@ export default function DashboardPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 max-w-xs text-slate-600">
-                      {row.reasons && row.reasons.length > 0 ? (
+                      {Array.isArray(row.reasons) && row.reasons.length > 0 ? (
                         <div className="space-y-1">
                           {row.reasons.map((r, rIdx) => (
                             <div key={rIdx} className="text-[11px]">
@@ -983,7 +1106,7 @@ export default function DashboardPage() {
                 <div className="flex justify-between">
                   <span className="text-slate-500">Rasio Tarif / Wajar:</span>
                   <span className={`font-bold ${simulatorResult.isRateLeak ? "text-rose-600" : "text-slate-900"}`}>
-                    {simulatorResult.ratio}x (Batas: {data.threshold.toFixed(2)}x)
+                    {simulatorResult.ratio}x (Batas: {safeThreshold.toFixed(2)}x)
                   </span>
                 </div>
                 <div className="flex justify-between">

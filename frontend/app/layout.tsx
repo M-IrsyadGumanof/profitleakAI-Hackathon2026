@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Navbar } from "./nav";
 import { Global3DScene } from "./global-3d-scene";
+import { AppShell } from "./app-shell";
 import "./globals.css";
 
 // Konfigurasi Tipografi Wajib: MiSans Latin (Xiaomi Inc.)
@@ -72,8 +73,8 @@ export default function RootLayout({
         {/* Dynamic Global Navbar */}
         <Navbar />
 
-        {/* Main Content Area (Margin proporsional: rapi tanpa tumpang-tindih navbar, tanpa celah berlebih) */}
-        <main className="flex-1 w-full pt-20 sm:pt-24">{children}</main>
+        {/* Main Content Area — di-remount per perubahan URL agar state form bersih, dengan margin proporsional */}
+        <AppShell>{children}</AppShell>
 
         {/* Global Clean Footer */}
         <footer className="w-full border-t border-slate-200 bg-white py-8">

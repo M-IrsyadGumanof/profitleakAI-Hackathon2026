@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { 
   AlertCircle, 
   ArrowRight, 
@@ -39,11 +38,30 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<{ rows: number; previewLines: string[] } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // State loading diikat ke id upload yang sedang berjalan, bukan sekadar
+  // boolean, sehingga tombol tidak bisa "tersangkut" berputar terus.
+  const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Upload hanya dianggap berjalan selama id-nya sama dengan id terakhir.
+  const isAnalyzing = isLoading && activeUploadId !== null;
+
+  // Next.js mempertahankan state client component selama halaman masih hidup,
+  // jadi form ini di-remount setiap kali halaman dibuka lewat `<main key>` di
+  // app/app-shell.tsx. Hasilnya form selalu kosong saat dibuka kembali.
+
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleProcessFile = (selectedFile: File) => {
     setErrorMessage(null);
+    setActiveUploadId(null);
+    setIsLoading(false);
     if (!selectedFile.name.endsWith(".csv") && selectedFile.type !== "text/csv") {
       setErrorMessage("Format file harus berupa CSV (.csv).");
       return;
@@ -127,10 +145,17 @@ export default function UploadPage() {
   };
 
   const handleSubmitAnalysis = async () => {
-    if (!file) return;
+    if (!file || isAnalyzing) return;
 
+    const uploadId = `${file.name}-${file.size}-${Date.now()}`;
+    setActiveUploadId(uploadId);
     setIsLoading(true);
     setErrorMessage(null);
+
+    // Batas waktu: backend bisa menggantung (mis. reload uvicorn) sehingga
+    // tombol loading tidak boleh berputar tanpa henti.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90_000);
 
     try {
       const formData = new FormData();
@@ -140,6 +165,7 @@ export default function UploadPage() {
       const response = await fetch(`${apiUrl}/api/upload-csv`, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -152,159 +178,20 @@ export default function UploadPage() {
       router.push("/dashboard");
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError")) {
-        const simulated = runClientSimulation(file.name);
-        sessionStorage.setItem("profitleak_analysis_result", JSON.stringify(simulated));
-        router.push("/dashboard");
-      } else {
-        setErrorMessage(errMsg);
-        setIsLoading(false);
-      }
+      // Jangan diam-diam menampilkan data palsu: selalu beri tahu pengguna
+      // bahwa backend tidak terjangkau, lalu biarkan ia mencoba lagi.
+      setErrorMessage(
+        errMsg.includes("aborted")
+          ? "Analisis melebihi batas waktu 90 detik. Pastikan backend aktif, lalu coba lagi."
+          : errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError")
+          ? "Tidak dapat terhubung ke backend (http://localhost:8000). Pastikan server API sudah berjalan, lalu coba lagi."
+          : errMsg
+      );
+      setActiveUploadId(null);
+      setIsLoading(false);
+    } finally {
+      clearTimeout(timeoutId);
     }
-  };
-
-  const runClientSimulation = (filename: string) => {
-    return {
-      filename,
-      currency: "BRL",
-      threshold: 3.09779,
-      margin_threshold: 0.46,
-      summary: {
-        total_rows: 12,
-        analysed: 12,
-        skipped: 0,
-        leaks: 5,
-        rate_leaks: 2,
-        margin_risks: 4,
-        estimated_loss: 284.45,
-        leak_rate: 41.67,
-      },
-      reason_breakdown: {
-        freight_eats_margin: 4,
-        rate_exceeds_fair: 2,
-      },
-      recommendations: [
-        {
-          code: "freight_eats_margin",
-          count: 4,
-          recommendation: "Naikkan harga jual atau terapkan minimum order agar ongkir tidak menghabiskan margin kotor.",
-        },
-        {
-          code: "rate_exceeds_fair",
-          count: 2,
-          recommendation: "Negosiasi tarif ekspedisi atau pilih layanan kurir alternatif pada rute padat.",
-        },
-      ],
-      rows: [
-        {
-          line: 2,
-          predicted_rate: 22.45,
-          actual_rate: 24.50,
-          ratio: 1.0913,
-          freight_ratio: 0.1886,
-          is_leak: false,
-          risk_score: 0.12,
-          detectors: { rate: false, margin: false },
-          reasons: [],
-        },
-        {
-          line: 3,
-          predicted_rate: 13.80,
-          actual_rate: 14.20,
-          ratio: 1.0289,
-          freight_ratio: 0.3155,
-          is_leak: false,
-          risk_score: 0.18,
-          detectors: { rate: false, margin: false },
-          reasons: [],
-        },
-        {
-          line: 4,
-          predicted_rate: 48.20,
-          actual_rate: 165.80,
-          ratio: 3.4398,
-          freight_ratio: 0.8772,
-          is_leak: true,
-          risk_score: 0.89,
-          detectors: { rate: true, margin: true },
-          reasons: [
-            {
-              code: "rate_exceeds_fair",
-              severity: "high",
-              detail: "Tarif kurir aktual 3.44x lipat tarif wajar (ambang 3.10x).",
-              remedy: "Negosiasi ulang tarif dengan ekspedisi untuk rute jarak jauh.",
-            },
-            {
-              code: "freight_eats_margin",
-              severity: "high",
-              detail: "Ongkir aktual menyerap 87.7% dari harga jual produk.",
-              remedy: "Terapkan ambang batas pesanan minimum atau bagi beban ongkir.",
-            },
-          ],
-        },
-        {
-          line: 5,
-          predicted_rate: 11.20,
-          actual_rate: 26.50,
-          ratio: 2.366,
-          freight_ratio: 1.3316,
-          is_leak: true,
-          risk_score: 0.78,
-          detectors: { rate: false, margin: true },
-          reasons: [
-            {
-              code: "freight_eats_margin",
-              severity: "high",
-              detail: "Ongkir aktual (R$ 26.50) melebihi harga barang (R$ 19.90 / 133%).",
-              remedy: "Barang harga rendah tidak ekonomis dijual satuan; terapkan sistem bundling.",
-            },
-          ],
-        },
-        {
-          line: 7,
-          predicted_rate: 31.20,
-          actual_rate: 98.50,
-          ratio: 3.157,
-          freight_ratio: 1.1067,
-          is_leak: true,
-          risk_score: 0.92,
-          detectors: { rate: true, margin: true },
-          reasons: [
-            {
-              code: "rate_exceeds_fair",
-              severity: "high",
-              detail: "Tarif kurir aktual 3.16x di atas estimasi wajar.",
-              remedy: "Alihkan rute ini ke ekspedisi alternatif.",
-            },
-            {
-              code: "freight_eats_margin",
-              severity: "high",
-              detail: "Ongkir menyerap 110.7% harga jual barang.",
-              remedy: "Evaluasi harga jual barang berat rute menengah.",
-            },
-          ],
-        },
-        {
-          line: 9,
-          predicted_rate: 18.50,
-          actual_rate: 52.40,
-          ratio: 2.8324,
-          freight_ratio: 1.4971,
-          is_leak: true,
-          risk_score: 0.81,
-          detectors: { rate: false, margin: true },
-          reasons: [
-            {
-              code: "freight_eats_margin",
-              severity: "high",
-              detail: "Ongkir menyerap 149.7% harga jual (R$ 52.40 vs R$ 35.00).",
-              remedy: "Terapkan minimum pembelian kuantiti.",
-            },
-          ],
-        },
-      ],
-      skipped: [],
-    };
   };
 
   return (
@@ -374,6 +261,8 @@ export default function UploadPage() {
               if (e.target.files && e.target.files[0]) {
                 handleProcessFile(e.target.files[0]);
               }
+              // Kosongkan value agar memilih file yang sama dua kali tetap memicu onChange.
+              e.target.value = "";
             }}
           />
 
@@ -454,6 +343,9 @@ export default function UploadPage() {
               onClick={() => {
                 setFile(null);
                 setCsvPreview(null);
+                setActiveUploadId(null);
+                setIsLoading(false);
+                resetFileInput();
               }}
               className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors"
             >
