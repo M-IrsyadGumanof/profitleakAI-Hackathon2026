@@ -6,3 +6,4 @@ weight_kg,distance_km,volume_cm3,price,actual_rate,product_weight_g,length_cm,he
 1.5,200.0,3000.0,290.0,98.0,1500,25,12,10
 0.4,60.0,1100.0,140.0,60.0,400,18,10,6
 2.0,180.0,4500.0,350.0,115.0,2000,30,15,10
+

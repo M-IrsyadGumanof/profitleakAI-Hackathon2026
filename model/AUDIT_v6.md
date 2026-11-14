@@ -101,3 +101,4 @@ Folder `fixtures/` telah diuji langsung ke endpoint `/api/upload-csv`:
 - `fixtures/contoh_campuran.csv`: 8 baris (kombinasi variatif), 1 baris sengaja invalid (`weight_kg=55`) sukses di-*skip* tanpa membatalkan proses batch.
 
 **Kesimpulan**: Model v6 dan seluruh dataset uji telah memenuhi standar kompetisi tertinggi dan siap untuk tahap demo juri.
+
