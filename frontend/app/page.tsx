@@ -9,142 +9,125 @@ import {
   ShieldAlert, 
   Sparkles,
   TrendingDown, 
-  Truck,
+  Truck, 
   Sliders,
   AlertTriangle,
-  ArrowUpRight
+  ArrowUpRight,
+  ShieldCheck,
+  Cpu,
+  BarChart3
 } from "lucide-react";
+import { Hero3D } from "./hero-3d";
+import { QuickSimulator } from "./quick-simulator";
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-20 sm:gap-28 py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      {/* 1. Hero Section (Antigravity Google Style) */}
-      <section className="flex flex-col items-center text-center max-w-4xl mx-auto pt-4">
-        {/* Eyebrow Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E0F2FE]/80 border border-[#BAE6FD] text-[#1E40AF] text-xs font-semibold shadow-xs mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
-          <span>Dual-Detector Logistics Margin Intelligence</span>
-        </div>
-
-        {/* Hero Headline */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08]">
-          Hentikan Kebocoran Margin Logistik E-Commerce dengan{" "}
-          <span className="bg-gradient-to-r from-[#1E40AF] via-[#1E3A8A] to-[#38BDF8] bg-clip-text text-transparent">
-            Dual-Detector AI
-          </span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl leading-relaxed">
-          Sistem audit machine learning untuk memprediksi tarif wajar pengiriman kurir dan mendeteksi transaksi tidak ekonomis yang menggerus laba usaha dari 78.181 pesanan nyata.
-        </p>
-
-        {/* Call to Actions */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto justify-center">
-          <Link
-            href="/upload"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-semibold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md hover:shadow-lg transition-all"
-          >
-            <FileSpreadsheet className="w-5 h-5 text-sky-200" />
-            <span>Unggah Dataset Transaksi (CSV)</span>
-            <ArrowRight className="w-4 h-4 ml-0.5" />
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-slate-700 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 rounded-xl shadow-xs transition-colors"
-          >
-            <Gauge className="w-5 h-5 text-slate-500" />
-            <span>Buka Dashboard Demo</span>
-          </Link>
-        </div>
-
-        {/* Live Interactive Simulation Preview Card (Bento Showcase) */}
-        <div className="mt-14 w-full rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 p-6 sm:p-8 text-left text-white shadow-2xl border border-slate-800 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#1E40AF]/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex flex-col gap-20 sm:gap-28 py-6 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      
+      {/* 1. Hero Section 3D Interaktif (Dual-Column: Content + 3D Mesh) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center pt-2 sm:pt-6">
+        
+        {/* Kolom Kiri: Headline, Subtitle, CTA & Telemetri Ringkas (Col 7) */}
+        <div className="lg:col-span-7 flex flex-col items-start text-left">
           
-          {/* Card Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-800/80 gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-sky-400 animate-pulse" />
-              <span className="text-xs font-mono font-semibold tracking-wider text-slate-300 uppercase">
-                Simulasi Audit Transaksi Riil
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-              <span className="bg-slate-800/90 px-2.5 py-1 rounded-md border border-slate-700">Dataset Olist E-Commerce</span>
-              <span className="bg-slate-800/90 px-2.5 py-1 rounded-md border border-slate-700">Mata Uang: BRL (R$)</span>
-            </div>
+          {/* Eyebrow Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E0F2FE]/90 border border-[#BAE6FD] text-[#1E40AF] text-xs font-semibold shadow-xs mb-6 select-none">
+            <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
+            <span>Dual-Detector Logistics Margin Intelligence</span>
           </div>
 
-          {/* Card Content Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">1. Tarif Kurir (Rate)</span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-rose-400">R$ 52.40</span>
-                <span className="text-xs text-slate-400 line-through">R$ 18.50 wajar</span>
-              </div>
-              <span className="mt-1 inline-block text-[11px] font-semibold text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded border border-rose-500/30">
-                2.83x di atas estimasi wajar
-              </span>
-            </div>
+          {/* Hero Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08]">
+            Hentikan Kebocoran Margin Logistik E-Commerce dengan{" "}
+            <span className="bg-gradient-to-r from-[#1E40AF] via-[#1E3A8A] to-[#38BDF8] bg-clip-text text-transparent">
+              Dual-Detector AI
+            </span>
+          </h1>
 
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">2. Penyerapan Margin</span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-amber-400">149.7%</span>
-                <span className="text-xs text-slate-400">dari harga barang</span>
-              </div>
-              <span className="mt-1 inline-block text-[11px] font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
-                Ongkir &gt; Harga Jual (R$ 35.00)
-              </span>
-            </div>
+          {/* Subtitle */}
+          <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
+            Sistem audit machine learning untuk memprediksi tarif wajar pengiriman kurir dan mendeteksi transaksi tidak ekonomis yang menggerus laba usaha dari 78.181 pesanan nyata.
+          </p>
 
-            <div className="p-4 rounded-xl bg-blue-950/40 border border-blue-500/30 flex flex-col justify-between">
-              <div>
-                <span className="text-[11px] font-mono text-blue-300 uppercase tracking-wider block">3. Rekomendasi Solusi</span>
-                <p className="mt-1.5 text-xs text-slate-200 leading-relaxed font-sans">
-                  Terapkan sistem bundling atau minimum order kuantiti untuk membagi beban ongkir.
-                </p>
-              </div>
-              <Link
-                href="/dashboard"
-                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                <span>Uji di Simulator Interaktif</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
+          {/* Call to Actions */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+            <Link
+              href="/upload"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3.5 text-sm sm:text-base font-semibold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
+              <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-sky-200" />
+              <span>Unggah Dataset Transaksi (CSV)</span>
+              <ArrowRight className="w-4 h-4 ml-0.5" />
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-700 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 rounded-xl shadow-xs transition-colors"
+            >
+              <Gauge className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
+              <span>Buka Dashboard Demo</span>
+            </Link>
+          </div>
+
+          {/* Micro Telemetry Bar */}
+          <div className="mt-8 pt-6 border-t border-slate-200/90 w-full flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Akurasi Tarif: <strong className="text-slate-900 font-bold">R² 73.49%</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#1E40AF]" />
+              <span>F1-Score Margin: <strong className="text-slate-900 font-bold">85.94%</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-sky-500" />
+              <span>Basis: <strong className="text-slate-900 font-bold">78.181 Pesanan Olist</strong></span>
             </div>
           </div>
         </div>
 
-        {/* Verified Model Metrics Bar */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 w-full pt-8 border-t border-slate-200">
-          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Basis Data</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">78.181</span>
-            <span className="text-xs text-slate-500">Transaksi Riil Olist</span>
+        {/* Kolom Kanan: Interactive 3D Logistics Defense Shield & Cube (Col 5) */}
+        <div className="lg:col-span-5 relative w-full flex items-center justify-center">
+          {/* Subtle Ambient Glow Backdrop */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#1E40AF]/10 via-[#38BDF8]/15 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+          
+          <div className="relative w-full rounded-3xl bg-slate-900/5 p-2 sm:p-4 border border-slate-200/80 shadow-xs backdrop-blur-xs">
+            <Hero3D />
           </div>
-          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Akurasi Tarif</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1 block">R² 73.49%</span>
-            <span className="text-xs text-slate-500">HistGradientBoosting</span>
-          </div>
-          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Deteksi Margin</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1 block">F1 85.94%</span>
-            <span className="text-xs text-slate-500">Precision 88.9% • Recall 83.1%</span>
-          </div>
-          <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mata Uang Acuan</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 block">BRL (R$)</span>
-            <span className="text-xs text-slate-500">Real Brasil</span>
-          </div>
+        </div>
+
+      </section>
+
+      {/* 2. Interactive Live Quick Simulator (Eksperimen Langsung Parameter) */}
+      <section className="flex flex-col gap-4">
+        <QuickSimulator />
+      </section>
+
+      {/* 3. Verified Model Metrics Bar */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Basis Data Teruji</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">78.181</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Transaksi Riil E-Commerce</span>
+        </div>
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Akurasi Tarif Kurir</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">R² 73.49%</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">HistGradientBoosting Regresi</span>
+        </div>
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Deteksi Risiko Margin</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">F1 85.94%</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Precision 88.9% • Recall 83.1%</span>
+        </div>
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mata Uang Acuan</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">BRL (R$)</span>
+          <span className="text-xs text-slate-500 mt-0.5 block">Real Brasil (Olist Dataset)</span>
         </div>
       </section>
 
-      {/* 2. Bento Grid: Arsitektur Dual-Detector */}
+      {/* 4. Bento Grid: Arsitektur Dual-Detector */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Arsitektur Cerdas</span>
@@ -158,10 +141,10 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1: Rate Detector */}
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#1E40AF]/40 transition-all flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-[#E0F2FE]/60 text-[#1E40AF] flex items-center justify-center border border-[#BAE6FD]">
+                <div className="w-12 h-12 rounded-xl bg-[#E0F2FE]/70 text-[#1E40AF] flex items-center justify-center border border-[#BAE6FD]">
                   <Truck className="w-6 h-6" />
                 </div>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E0F2FE] text-[#1E40AF] border border-[#BAE6FD]">
@@ -198,7 +181,7 @@ export default function HomePage() {
           </div>
 
           {/* Card 2: Margin Detector */}
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-rose-400/40 transition-all flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
@@ -239,7 +222,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Cara Pakai dalam 3 Langkah */}
+      {/* 5. Cara Pakai dalam 3 Langkah */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Alur Kerja Cepat</span>
@@ -299,7 +282,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Batasan Cakupan Sistem (Transparan & Anti-Blackbox) */}
+      {/* 6. Batasan Cakupan Sistem (Transparan & Anti-Blackbox) */}
       <section className="p-7 sm:p-9 rounded-2xl bg-slate-100/80 border border-slate-200/90">
         <div className="flex items-start gap-4">
           <div className="p-2.5 rounded-xl bg-slate-200 text-slate-700 shrink-0 mt-0.5">
@@ -341,7 +324,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. Footer Call to Action Banner */}
+      {/* 7. Footer Call to Action Banner */}
       <section className="text-center py-10 border-t border-slate-200 flex flex-col items-center">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Siap Menguji Data Transaksi Anda?</h2>
         <p className="text-base text-slate-600 mt-2.5 max-w-xl">
@@ -364,6 +347,7 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
     </div>
   );
 }
