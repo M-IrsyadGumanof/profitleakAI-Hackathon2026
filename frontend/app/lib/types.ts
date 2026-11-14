@@ -3,7 +3,8 @@
  * ProfitLeak AI - TypeScript Type Definitions & API Contracts (v6 Multi-Detector)
  * Owner: Suhafdal (Frontend Integration Engineer)
  * Branch: suhafdal
- * Rujukan: Kontrak API Bagian 5 (pembagian_tim_5_orang.txt) & backend/main.py
+ * Rujukan: Kontrak API Bagian 5 (pembagian_tim_5_orang.txt) &
+ *          Fitur Saran AI Gemini (pembagian_tugas_gemini.txt)
  * ========================================================================
  */
 
@@ -274,4 +275,54 @@ export interface LeakFlagEntity {
   threshold: number;
   is_leak: boolean;
   created_at: string;
+}
+
+// ------------------------------------------------------------------------
+// 7. KONTRAK FITUR SARAN AI GEMINI (POST /api/advice)
+// Rujukan: pembagian_tugas_gemini.txt & backend/main.py
+// ------------------------------------------------------------------------
+
+export interface AdviceRowIn {
+  line: number;
+  predicted_rate?: number;
+  actual_rate?: number;
+  ratio?: number;
+  freight_ratio?: number;
+  is_leak?: boolean;
+  risk_score?: number;
+  detectors?: {
+    rate?: boolean;
+    margin?: boolean;
+    [key: string]: boolean | undefined;
+  };
+}
+
+export interface AdviceRequest {
+  filename?: string;
+  threshold?: number;
+  summary: Partial<CsvUploadSummary> & Record<string, unknown>;
+  rows: AdviceRowIn[];
+}
+
+export interface AdvicePriority {
+  judul: string;
+  dampak: string;
+  aksi: string[];
+  terdampak: number[];
+}
+
+export interface AdviceRowNote {
+  line: number;
+  masalah: string;
+  saran_harga: string;
+}
+
+export interface AdviceResponse {
+  source: "gemini" | "rule_based" | string;
+  generated_at: string;
+  headline: string;
+  ringkasan: string;
+  prioritas: AdvicePriority[];
+  per_baris: AdviceRowNote[];
+  catatan: string;
 }

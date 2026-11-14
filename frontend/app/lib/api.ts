@@ -3,7 +3,8 @@
  * ProfitLeak AI - API Client & Integration Utilities (v6 Multi-Detector)
  * Owner: Suhafdal (Frontend Integration Engineer)
  * Branch: suhafdal
- * Rujukan: Kontrak API Bagian 5 (pembagian_tim_5_orang.txt) & backend/main.py
+ * Rujukan: Kontrak API Bagian 5 (pembagian_tim_5_orang.txt) &
+ *          Fitur Saran AI Gemini (pembagian_tugas_gemini.txt)
  * ========================================================================
  */
 
@@ -19,6 +20,10 @@ import {
   UploadCsvResponse,
   ValidationResult,
   LeakReason,
+  AdviceRequest,
+  AdviceResponse,
+  AdvicePriority,
+  AdviceRowNote,
 } from "./types";
 
 const BASE_URL =
@@ -142,6 +147,69 @@ export function generateMockDetectLeak(payload: LeakDetectionRequest): DetectLea
       margin: isMarginRisk,
     },
     reasons,
+  };
+}
+
+export function generateMockAdvice(payload: AdviceRequest): AdviceResponse {
+  const summary = payload.summary || {};
+  const leaks = Number(summary.leaks || 0);
+  const analysed = Number(summary.analysed || 0);
+  const estimatedLoss = Number(summary.estimated_loss || 0);
+
+  if (leaks === 0) {
+    return {
+      source: "mock_safe",
+      generated_at: new Date().toISOString(),
+      headline: "Semua transaksi aman dan efisien",
+      ringkasan: `Dari total ${analysed} transaksi yang dianalisis, tidak ditemukan anomali tarif maupun risiko margin kotor.`,
+      prioritas: [],
+      per_baris: [],
+      catatan: "Saran simulasi: kondisi operasional logistik sehat.",
+    };
+  }
+
+  const leakRows = (payload.rows || []).filter((r) => r.is_leak);
+  const topRows = (leakRows.length > 0 ? leakRows : payload.rows || []).slice(0, 3);
+
+  const prioritas: AdvicePriority[] = [
+    {
+      judul: "Negosiasi tarif ekspedisi & kurir mitra",
+      dampak: `Potensi penghematan biaya logistik R$ ${estimatedLoss.toFixed(2)}`,
+      aksi: [
+        "Minta evaluasi kontrak daftar tarif khusus rute jarak jauh",
+        "Bandingkan layanan minimal 2 ekspedisi alternatif",
+      ],
+      terdampak: topRows.map((r) => r.line),
+    },
+    {
+      judul: "Penyesuaian batas harga & strategi bundling",
+      dampak: "Mencegah ongkir memakan lebih dari 30% harga produk",
+      aksi: [
+        "Terapkan batas minimal belanja untuk subsidi ongkir",
+        "Jual produk bernilai rendah dalam bentuk paket multipack",
+      ],
+      terdampak: topRows.map((r) => r.line),
+    },
+  ];
+
+  const perBaris: AdviceRowNote[] = topRows.map((r) => {
+    const act = r.actual_rate || 0;
+    const targetPrice = Math.round((act / 0.3) * 100) / 100;
+    return {
+      line: r.line,
+      masalah: `Ongkir aktual (R$ ${act.toFixed(2)}) terlalu besar dibanding tarif wajar.`,
+      saran_harga: `Naikkan harga jual minimal ke R$ ${targetPrice.toFixed(2)} agar porsi ongkir kembali di bawah 30%.`,
+    };
+  });
+
+  return {
+    source: "rule_based",
+    generated_at: new Date().toISOString(),
+    headline: `${leaks} transaksi terindikasi membocorkan margin pengiriman`,
+    ringkasan: `${leaks} dari ${analysed} transaksi yang dianalisis membayar ongkir jauh di atas estimasi wajar atau menggerus margin penjualan.`,
+    prioritas,
+    per_baris: perBaris,
+    catatan: "Saran AI, bukan nasihat keuangan final. Model tidak mencakup HPP & diskon.",
   };
 }
 
@@ -421,5 +489,51 @@ export async function uploadCsv(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Gagal mengunggah file CSV: ${msg}`);
+  }
+}
+
+/**
+ * Minta Saran AI (LLM Google Gemini / Fallback Rule-Based)
+ * POST /api/advice
+ * Rujukan: pembagian_tugas_gemini.txt
+ */
+export async function getAdvice(
+  payload: AdviceRequest,
+  options?: RequestOptions
+): Promise<AdviceResponse> {
+  if (options?.useMock || DEFAULT_USE_MOCK) {
+    return generateMockAdvice(payload);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/advice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => null);
+      const detail =
+        errorBody && typeof errorBody.detail === "string"
+          ? errorBody.detail
+          : `HTTP error ${res.status}: ${res.statusText}`;
+      throw new Error(detail);
+    }
+
+    return await res.json();
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Permintaan saran AI timeout (melebihi batas 30 detik). Silakan coba kembali.");
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Gagal memanggil endpoint /api/advice: ${msg}`);
   }
 }
