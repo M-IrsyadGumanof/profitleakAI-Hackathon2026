@@ -480,7 +480,7 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-500">Normal</span>
           </div>
           <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <Layers className="w-3.5 h-3.5 text-[#1E40AF]" />
             Dual-Detector Proteksi Aktif
           </div>
         </div>
@@ -492,7 +492,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("overview")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "overview"
-              ? "text-emerald-600 border-b-2 border-emerald-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -502,7 +502,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("table")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "table"
-              ? "text-emerald-600 border-b-2 border-emerald-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -512,7 +512,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("simulator")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "simulator"
-              ? "text-emerald-600 border-b-2 border-emerald-600"
+              ? "text-[#1E40AF] border-b-2 border-[#1E40AF]"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -561,7 +561,7 @@ export default function DashboardPage() {
                                 <div className="mt-1 space-y-0.5 text-slate-600">
                                   <div>Tarif Aktual: {formatBRL(d.actual_rate)}</div>
                                   <div>Tarif Wajar: {formatBRL(d.predicted_rate)}</div>
-                                  <div className="font-bold text-blue-600">
+                                  <div className="font-bold text-[#1E40AF]">
                                     Rasio: {d.ratio}x
                                   </div>
                                   <div className={d.is_leak ? "text-rose-600 font-bold" : "text-emerald-600"}>
@@ -576,12 +576,12 @@ export default function DashboardPage() {
                       />
                       <ReferenceLine
                         y={data.threshold}
-                        stroke="#ef4444"
+                        stroke="#f43f5e"
                         strokeDasharray="4 4"
                         label={{
                           value: `Ambang ${data.threshold.toFixed(2)}x`,
                           position: "top",
-                          fill: "#ef4444",
+                          fill: "#f43f5e",
                           fontSize: 10,
                         }}
                       />
@@ -589,7 +589,7 @@ export default function DashboardPage() {
                         {data.rows.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={entry.is_leak ? "#ef4444" : "#2563eb"}
+                            fill={entry.is_leak ? "#f43f5e" : "#1e40af"}
                           />
                         ))}
                       </Bar>
@@ -601,7 +601,7 @@ export default function DashboardPage() {
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-blue-600"></span>
+                    <span className="w-3 h-3 rounded bg-[#1E40AF]"></span>
                     <span>Tarif Wajar (&le; {data.threshold.toFixed(2)}x)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -640,10 +640,10 @@ export default function DashboardPage() {
                   <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-blue-600" />
+                        <Truck className="w-4 h-4 text-[#1E40AF]" />
                         <span className="text-xs font-bold text-slate-900">Overcharge Ekspedisi</span>
                       </div>
-                      <span className="text-xs font-bold text-blue-600">
+                      <span className="text-xs font-bold text-[#1E40AF]">
                         {data.reason_breakdown.rate_exceeds_fair || 0} kasus
                       </span>
                     </div>
@@ -823,7 +823,7 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-blue-600" />
+                  <Sliders className="w-5 h-5 text-[#1E40AF]" />
                   Parameter Paket Transaksi
                 </h3>
                 <span className="text-xs text-slate-500">Mata Uang: BRL (R$)</span>
@@ -943,7 +943,7 @@ export default function DashboardPage() {
 
           <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
             <div>
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider block">
                 Hasil Evaluasi AI
               </span>
               <h3 className="text-lg font-bold text-slate-900 mt-1">
@@ -974,7 +974,7 @@ export default function DashboardPage() {
               <div className="mt-5 space-y-2.5 text-xs text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Estimasi Tarif Wajar:</span>
-                  <span className="font-bold text-blue-600">{formatBRL(simulatorResult.predictedRate)}</span>
+                  <span className="font-bold text-[#1E40AF]">{formatBRL(simulatorResult.predictedRate)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Tarif Aktual:</span>
