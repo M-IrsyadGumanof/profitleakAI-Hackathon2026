@@ -7,7 +7,7 @@ import {
   Scale,
   Maximize2,
   Navigation,
-  DollarSign,
+  Coins,
   AlertTriangle,
   CheckCircle2,
   BarChart3,
@@ -43,12 +43,12 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Rentang validasi model v5 dari dataset Olist
+// Rentang validasi model v5 dari dataset Olist E-Commerce Brasil
 const VALID_RANGES = {
   weight_kg: { min: 0.05, max: 30.0, label: "Berat" },
   distance_km: { min: 1.5, max: 3135.8, label: "Jarak" },
   volume_cm3: { min: 352.0, max: 244608.0, label: "Volume" },
-  price: { min: 4.99, max: 2110.0, label: "Harga" },
+  price: { min: 4.99, max: 2110.0, label: "Harga Barang" },
   actual_freight: { min: 1.0, max: 1500.0, label: "Ongkir" },
 };
 
@@ -59,7 +59,7 @@ const BASELINE_MEDIAN_RESIDUAL = -0.011977;
 const PRESET_SCENARIOS = [
   {
     id: "normal",
-    name: "Normal",
+    name: "Transaksi Normal",
     badge: "Tarif Wajar",
     weight: 0.8,
     distance: 120,
@@ -71,7 +71,7 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "leak-high",
-    name: "Bocor 5x",
+    name: "Bocor 5x (Ekstrem)",
     badge: "Anomali",
     weight: 0.5,
     distance: 85,
@@ -83,8 +83,8 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "heavy-valid",
-    name: "Kargo Berat",
-    badge: "Wajar",
+    name: "Kargo Berat Jauh",
+    badge: "Tarif Wajar",
     weight: 15.0,
     distance: 1820,
     length: 50,
@@ -95,7 +95,7 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "leak-mild",
-    name: "Markup",
+    name: "Markup Logistik",
     badge: "Bocor Samar",
     weight: 2.2,
     distance: 280,
@@ -140,7 +140,7 @@ export default function ProfitLeakDashboard() {
     return Math.max(1, Math.round(lengthCm * widthCm * heightCm));
   }, [lengthCm, widthCm, heightCm]);
 
-  // Validasi input
+  // Validasi batas input
   const validationWarnings = useMemo(() => {
     const list: string[] = [];
     if (weightKg < VALID_RANGES.weight_kg.min || weightKg > VALID_RANGES.weight_kg.max) {
@@ -150,10 +150,10 @@ export default function ProfitLeakDashboard() {
       list.push(`Jarak (${distanceKm} km) di luar rentang latih 1.5 - 3.135 km`);
     }
     if (volumeCm3 < VALID_RANGES.volume_cm3.min || volumeCm3 > VALID_RANGES.volume_cm3.max) {
-      list.push(`Volume (${volumeCm3.toLocaleString()} cm³) di luar rentang data`);
+      list.push(`Volume (${volumeCm3.toLocaleString()} cm³) di luar rentang data latih`);
     }
     if (price < VALID_RANGES.price.min || price > VALID_RANGES.price.max) {
-      list.push(`Harga (R$ ${price}) di luar rentang data`);
+      list.push(`Harga (R$ ${price} BRL) di luar rentang data latih`);
     }
     return list;
   }, [weightKg, distanceKm, volumeCm3, price]);
@@ -183,7 +183,7 @@ export default function ProfitLeakDashboard() {
     let message = "Biaya pengiriman sesuai dengan estimasi tarif wajar logistik e-commerce.";
     if (isLeak) {
       if (ratio >= 3.5) {
-        message = "Kebocoran profit kritis. Tarif ongkir ditagihkan kurir jauh melebihi tarif wajar.";
+        message = "Kebocoran profit kritis! Tarif ongkir kurir melonjak jauh melebihi batas tarif wajar.";
       } else {
         message = "Terindikasi markup biaya logistik melebihi batas toleransi residual model.";
       }
@@ -196,7 +196,7 @@ export default function ProfitLeakDashboard() {
       ratio: Number(ratio.toFixed(2)),
       isLeak,
       threshold: THRESHOLD,
-      currency: "BRL",
+      currency: "BRL (Real Brasil)",
       source: "simulation",
       potentialLoss: Number(potentialLoss.toFixed(2)),
       message,
@@ -241,7 +241,7 @@ export default function ProfitLeakDashboard() {
           ratio: Number((data.ratio ?? aRate / (pRate || 1)).toFixed(2)),
           isLeak: leak,
           threshold: Number(data.threshold ?? THRESHOLD),
-          currency: data.currency || "BRL",
+          currency: "BRL (Real Brasil)",
           source: "api",
           potentialLoss: Number((leak ? Math.max(0, aRate - pRate) : 0).toFixed(2)),
           message:
@@ -287,48 +287,53 @@ export default function ProfitLeakDashboard() {
     setResult(computed);
   };
 
-  // Data Chart
+  // Data Chart: Terang & Kontras
   const chartData = useMemo(() => {
     if (!result) return [];
     return [
       {
         name: "Tarif Wajar (AI)",
         amount: result.predictedRate,
-        fill: "#3b82f6", // Biru cerah yang jelas
+        fill: "#2563eb", // Royal Blue cerah
       },
       {
         name: "Ongkir Ditagihkan",
         amount: result.actualRate,
-        fill: result.isLeak ? "#ef4444" : "#64748b", // Merah jika anomali, Slate jika normal
+        fill: result.isLeak ? "#ef4444" : "#94a3b8", // Merah jika bocor, Slate jika normal
       },
     ];
   }, [result]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Header Minimalis shadcn */}
-      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-40">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
+      {/* Header Terang & Bersih */}
+      <header className="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-40 shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-semibold text-xs">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm shadow-sm">
               PL
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-tight">ProfitLeak AI</span>
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 ">
-                  v5.0
+                <span className="text-base font-semibold tracking-tight text-slate-900">
+                  ProfitLeak <span className="text-blue-600 font-bold">AI</span>
+                </span>
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4.5 bg-blue-50 text-blue-700 border-blue-200 font-medium">
+                  Model v5.0
                 </Badge>
               </div>
-              <span className="text-[11px] text-muted-foreground hidden sm:block">
-                Deteksi Anomali Tarif Pengiriman & Kebocoran Profit Logistik
+              <span className="text-xs text-slate-500 hidden sm:block">
+                Deteksi Anomali Tarif Pengiriman & Kebocoran Biaya Logistik E-Commerce
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className=" text-[11px] font-normal">
+          <div className="flex items-center gap-2.5">
+            <Badge variant="secondary" className="text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
               R²: 72.3% • FPR: 0.17%
+            </Badge>
+            <Badge variant="outline" className="text-xs font-medium text-slate-600 bg-white border-slate-200">
+              Mata Uang: Real Brasil (BRL)
             </Badge>
           </div>
         </div>
@@ -336,17 +341,17 @@ export default function ProfitLeakDashboard() {
 
       {/* Main Container */}
       <main className="mx-auto max-w-6xl flex-1 w-full px-4 py-6 sm:px-6 flex flex-col gap-6">
-        {/* Preset Selector menggunakan Tabs shadcn */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <SlidersHorizontal className="size-3.5" />
-            <span>Preset Skenario Pengujian:</span>
+        {/* Preset Selector Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 pl-1">
+            <SlidersHorizontal className="size-3.5 text-blue-600" />
+            <span>Preset Skenario Demo:</span>
           </div>
 
           <Tabs value={selectedPreset} onValueChange={handleSelectPreset} className="w-full sm:w-auto">
-            <TabsList className="grid grid-cols-4 w-full sm:w-auto h-8 p-1">
+            <TabsList className="grid grid-cols-4 w-full sm:w-auto h-8 p-1 bg-slate-100">
               {PRESET_SCENARIOS.map((p) => (
-                <TabsTrigger key={p.id} value={p.id} className="text-xs px-3 h-6">
+                <TabsTrigger key={p.id} value={p.id} className="text-xs px-3 h-6 text-slate-600 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
                   {p.name}
                 </TabsTrigger>
               ))}
@@ -356,19 +361,19 @@ export default function ProfitLeakDashboard() {
 
         {/* 2-Column Balanced Dashboard */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* KOLOM KIRI: Form Input dengan Card shadcn */}
-          <Card className="lg:col-span-5 shadow-sm">
-            <CardHeader className="pb-4">
+          {/* KOLOM KIRI: Form Input dengan Card Putih Bersih */}
+          <Card className="lg:col-span-5 bg-white border-slate-200 shadow-xs">
+            <CardHeader className="pb-3 border-b border-slate-100">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold tracking-tight">
-                  Parameter Transaksi
+                <CardTitle className="text-sm font-semibold tracking-tight text-slate-900">
+                  Parameter Transaksi Pengiriman
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] ">
-                  Input Fitur
+                <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
+                  Data Input
                 </Badge>
               </div>
-              <CardDescription className="text-xs">
-                Masukkan spesifikasi fisik paket, rute pengiriman, dan biaya invoice.
+              <CardDescription className="text-xs text-slate-500">
+                Spesifikasi fisik paket, jarak rute, dan invoice tagihan kurir.
               </CardDescription>
             </CardHeader>
 
@@ -378,16 +383,16 @@ export default function ProfitLeakDashboard() {
                 runAnalysis();
               }}
             >
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="flex flex-col gap-4 pt-4">
                 {/* Row 1: Berat & Jarak */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="weight" className="text-xs flex items-center gap-1">
-                        <Scale className="size-3 text-muted-foreground" />
-                        Berat (kg)
+                      <Label htmlFor="weight" className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                        <Scale className="size-3 text-blue-600" />
+                        Berat Paket (kg)
                       </Label>
-                      <span className="text-[10px] text-muted-foreground">0.05-30</span>
+                      <span className="text-[10px] text-slate-400">0.05-30kg</span>
                     </div>
                     <div className="relative">
                       <Input
@@ -398,10 +403,10 @@ export default function ProfitLeakDashboard() {
                         max="100"
                         value={weightKg}
                         onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs pr-7"
+                        className="h-8.5 text-xs pr-8 bg-white border-slate-200 text-slate-900 focus-visible:ring-blue-600"
                         required
                       />
-                      <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
+                      <span className="absolute right-2.5 top-2 text-[11px] font-medium text-slate-400">
                         kg
                       </span>
                     </div>
@@ -409,11 +414,11 @@ export default function ProfitLeakDashboard() {
 
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="distance" className="text-xs flex items-center gap-1">
-                        <Navigation className="size-3 text-muted-foreground" />
-                        Jarak (km)
+                      <Label htmlFor="distance" className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                        <Navigation className="size-3 text-blue-600" />
+                        Jarak Rute (km)
                       </Label>
-                      <span className="text-[10px] text-muted-foreground">1.5-3.135</span>
+                      <span className="text-[10px] text-slate-400">1.5-3.135km</span>
                     </div>
                     <div className="relative">
                       <Input
@@ -424,10 +429,10 @@ export default function ProfitLeakDashboard() {
                         max="6000"
                         value={distanceKm}
                         onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs pr-7"
+                        className="h-8.5 text-xs pr-8 bg-white border-slate-200 text-slate-900 focus-visible:ring-blue-600"
                         required
                       />
-                      <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
+                      <span className="absolute right-2.5 top-2 text-[11px] font-medium text-slate-400">
                         km
                       </span>
                     </div>
@@ -437,11 +442,11 @@ export default function ProfitLeakDashboard() {
                 {/* Row 2: Dimensi & Volume */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs flex items-center gap-1">
-                      <Maximize2 className="size-3 text-muted-foreground" />
-                      Dimensi (P × L × T cm)
+                    <Label className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                      <Maximize2 className="size-3 text-blue-600" />
+                      Dimensi (P × L × T dalam cm)
                     </Label>
-                    <span className=" text-[10px] text-muted-foreground">
+                    <span className="text-[11px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                       Vol: {volumeCm3.toLocaleString()} cm³
                     </span>
                   </div>
@@ -452,10 +457,10 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={lengthCm}
                         onChange={(e) => setLengthCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs text-center pr-4"
+                        className="h-8.5 text-xs text-center pr-5 bg-white border-slate-200"
                         placeholder="P"
                       />
-                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                      <span className="absolute right-2 top-2 text-[10px] font-bold text-slate-400">
                         P
                       </span>
                     </div>
@@ -465,10 +470,10 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={widthCm}
                         onChange={(e) => setWidthCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs text-center pr-4"
+                        className="h-8.5 text-xs text-center pr-5 bg-white border-slate-200"
                         placeholder="L"
                       />
-                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                      <span className="absolute right-2 top-2 text-[10px] font-bold text-slate-400">
                         L
                       </span>
                     </div>
@@ -478,30 +483,30 @@ export default function ProfitLeakDashboard() {
                         min="1"
                         value={heightCm}
                         onChange={(e) => setHeightCm(parseFloat(e.target.value) || 1)}
-                        className="h-8 text-xs text-center pr-4"
+                        className="h-8.5 text-xs text-center pr-5 bg-white border-slate-200"
                         placeholder="T"
                       />
-                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                      <span className="absolute right-2 top-2 text-[10px] font-bold text-slate-400">
                         T
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="bg-slate-100" />
 
-                {/* Row 3: Nilai Barang & Ongkir Ditagih */}
+                {/* Row 3: Nilai Barang & Ongkir Ditagih (Label Jelas Real Brasil BRL) */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="price" className="text-xs flex items-center gap-1">
-                        <DollarSign className="size-3 text-muted-foreground" />
+                      <Label htmlFor="price" className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                        <Coins className="size-3 text-blue-600" />
                         Nilai Barang
                       </Label>
-                      <span className="text-[10px] text-muted-foreground">BRL</span>
+                      <span className="text-[10px] font-medium text-slate-400">BRL</span>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground ">
+                      <span className="absolute left-2.5 top-2 text-[11px] font-semibold text-slate-500">
                         R$
                       </span>
                       <Input
@@ -511,22 +516,23 @@ export default function ProfitLeakDashboard() {
                         min="0.1"
                         value={price}
                         onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs pl-7"
+                        className="h-8.5 text-xs pl-8 bg-white border-slate-200 text-slate-900"
                         required
                       />
                     </div>
+                    <span className="text-[10px] text-slate-400">Real Brasil</span>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="freight" className="text-xs flex items-center gap-1 font-medium">
-                        <AlertTriangle className="size-3 text-muted-foreground" />
+                      <Label htmlFor="freight" className="text-xs font-semibold text-slate-900 flex items-center gap-1">
+                        <AlertTriangle className="size-3 text-amber-500" />
                         Ongkir Ditagih
                       </Label>
-                      <span className="text-[10px] text-muted-foreground">Kurir</span>
+                      <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1 rounded">Kurir</span>
                     </div>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground ">
+                      <span className="absolute left-2.5 top-2 text-[11px] font-bold text-slate-700">
                         R$
                       </span>
                       <Input
@@ -536,18 +542,19 @@ export default function ProfitLeakDashboard() {
                         min="0.01"
                         value={actualFreight}
                         onChange={(e) => setActualFreight(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-xs font-semibold pl-7"
+                        className="h-8.5 text-xs font-semibold pl-8 bg-white border-slate-300 text-slate-900 focus-visible:ring-blue-600"
                         required
                       />
                     </div>
+                    <span className="text-[10px] text-slate-400">Biaya pada invoice</span>
                   </div>
                 </div>
 
-                {/* Validasi Warning Alert shadcn */}
+                {/* Validasi Warning Alert */}
                 {validationWarnings.length > 0 && (
-                  <Alert variant="destructive" className="py-2 px-3 text-xs">
-                    <AlertTitle className="text-xs font-semibold">Perhatian Batas Data:</AlertTitle>
-                    <AlertDescription className="text-[11px] mt-1 space-y-0.5">
+                  <Alert variant="destructive" className="py-2.5 px-3 text-xs bg-red-50 border-red-200 text-red-900">
+                    <AlertTitle className="text-xs font-bold text-red-800">Catatan Batas Data Latih:</AlertTitle>
+                    <AlertDescription className="text-[11px] mt-1 space-y-0.5 text-red-700">
                       {validationWarnings.map((w, idx) => (
                         <div key={idx}>• {w}</div>
                       ))}
@@ -556,16 +563,16 @@ export default function ProfitLeakDashboard() {
                 )}
               </CardContent>
 
-              <CardFooter className="pt-2">
-                <Button type="submit" disabled={loading} className="w-full h-9 text-xs">
+              <CardFooter className="pt-2 pb-4">
+                <Button type="submit" disabled={loading} className="w-full h-9 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                   {loading ? (
                     <>
                       <RefreshCw className="size-3.5 animate-spin mr-2" />
-                      Memproses Residual...
+                      Memproses Estimasi Model...
                     </>
                   ) : (
                     <>
-                      <span>Analisis Kebocoran Ongkir</span>
+                      <span>Analisis Kebocoran Tarif Ongkir</span>
                       <ArrowRight className="size-3.5 ml-2" />
                     </>
                   )}
@@ -574,38 +581,50 @@ export default function ProfitLeakDashboard() {
             </form>
           </Card>
 
-          {/* KOLOM KANAN: Hasil Evaluasi & Grafik */}
+          {/* KOLOM KANAN: Hasil Evaluasi & Visualisasi Terang */}
           <div className="lg:col-span-7 flex flex-col gap-4">
             {result ? (
               <>
-                {/* Status Evaluasi Card */}
-                <Card className={result.isLeak ? "border-destructive/50 bg-destructive/5" : ""}>
+                {/* Status Evaluasi Card Terang */}
+                <Card
+                  className={`border shadow-xs ${
+                    result.isLeak
+                      ? "bg-red-50/70 border-red-200 text-red-950"
+                      : "bg-emerald-50/70 border-emerald-200 text-emerald-950"
+                  }`}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex size-9 items-center justify-center rounded-lg border ${
+                          className={`flex size-10 items-center justify-center rounded-lg border shadow-xs ${
                             result.isLeak
-                              ? "border-destructive/30 bg-destructive/10 text-destructive"
-                              : "border-border bg-muted text-foreground"
+                              ? "bg-red-100 border-red-200 text-red-600"
+                              : "bg-emerald-100 border-emerald-200 text-emerald-600"
                           }`}
                         >
                           {result.isLeak ? (
-                            <ShieldAlert className="size-5" />
+                            <ShieldAlert className="size-6" />
                           ) : (
-                            <ShieldCheck className="size-5" />
+                            <ShieldCheck className="size-6" />
                           )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
-                              Hasil Evaluasi
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                              Status Evaluasi Tarif
                             </span>
-                            <Badge variant={result.isLeak ? "destructive" : "secondary"}>
-                              {result.isLeak ? "TERINDIKASI BOCOR" : "TARIF NORMAL"}
+                            <Badge
+                              className={`text-[10px] font-bold ${
+                                result.isLeak
+                                  ? "bg-red-600 text-white hover:bg-red-600"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-600"
+                              }`}
+                            >
+                              {result.isLeak ? "TERINDIKASI BOCOR" : "TARIF NORMAL (WAJAR)"}
                             </Badge>
                           </div>
-                          <CardTitle className="text-base mt-0.5">
+                          <CardTitle className="text-base font-bold text-slate-900 mt-1">
                             {result.isLeak
                               ? "Terdeteksi Kebocoran Biaya Logistik"
                               : "Tarif Logistik Sesuai Estimasi Wajar"}
@@ -613,22 +632,22 @@ export default function ProfitLeakDashboard() {
                         </div>
                       </div>
 
-                      <Badge variant="outline" className=" text-[10px]">
+                      <Badge variant="outline" className="text-[10px] font-medium bg-white border-slate-200 text-slate-600">
                         {result.source === "api" ? "FastAPI Live" : "Engine v5"}
                       </Badge>
                     </div>
                   </CardHeader>
 
-                  <CardContent className="pt-0 text-xs text-muted-foreground leading-relaxed">
+                  <CardContent className="pt-0 text-xs text-slate-700 leading-relaxed">
                     <p>{result.message}</p>
 
                     {result.isLeak && (
-                      <div className="mt-3 flex items-center justify-between rounded-md bg-destructive/10 border border-destructive/20 p-2.5">
-                        <span className="text-xs text-foreground flex items-center gap-1.5 font-medium">
-                          <TrendingUp className="size-4 text-destructive" />
-                          Estimasi Selisih Kerugian:
+                      <div className="mt-3 flex items-center justify-between rounded-lg bg-red-100/90 border border-red-200 px-3.5 py-2.5">
+                        <span className="text-xs text-red-900 flex items-center gap-1.5 font-semibold">
+                          <TrendingUp className="size-4 text-red-600" />
+                          Potensi Kerugian / Transaksi:
                         </span>
-                        <span className="text-sm font-bold text-destructive">
+                        <span className="text-sm font-extrabold text-red-700">
                           R$ {result.potentialLoss.toFixed(2)} BRL
                         </span>
                       </div>
@@ -636,74 +655,78 @@ export default function ProfitLeakDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* 4 Metric Cards Grid */}
+                {/* 4 Metric Cards Grid Bersih */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <Card className="p-3">
-                    <span className="text-[10px] text-muted-foreground block">
-                      Ongkir Wajar (AI)
+                  <Card className="p-3.5 bg-white border-slate-200 shadow-xs">
+                    <span className="text-[11px] font-medium text-slate-500 block">
+                      Tarif Wajar (AI)
                     </span>
-                    <p className="text-base font-bold mt-1 text-foreground">
+                    <p className="text-lg font-extrabold mt-1 text-blue-600">
                       R$ {result.predictedRate.toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-muted-foreground">Baseline Model</span>
+                    <span className="text-[10px] text-slate-400">Real Brasil (BRL)</span>
                   </Card>
 
-                  <Card className="p-3">
-                    <span className="text-[10px] text-muted-foreground block">
+                  <Card className="p-3.5 bg-white border-slate-200 shadow-xs">
+                    <span className="text-[11px] font-medium text-slate-500 block">
                       Ongkir Ditagihkan
                     </span>
                     <p
-                      className={`text-base font-bold mt-1 ${
-                        result.isLeak ? "text-destructive" : "text-foreground"
+                      className={`text-lg font-extrabold mt-1 ${
+                        result.isLeak ? "text-red-600" : "text-slate-900"
                       }`}
                     >
                       R$ {result.actualRate.toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-muted-foreground">Invoice Kurir</span>
+                    <span className="text-[10px] text-slate-400">Invoice Kurir</span>
                   </Card>
 
-                  <Card className="p-3">
-                    <span className="text-[10px] text-muted-foreground block">
-                      Rasio Tagihan/Wajar
+                  <Card className="p-3.5 bg-white border-slate-200 shadow-xs">
+                    <span className="text-[11px] font-medium text-slate-500 block">
+                      Rasio Tagihan vs Wajar
                     </span>
                     <p
-                      className={`text-base font-bold mt-1 ${
-                        result.ratio > 2.0 ? "text-destructive" : "text-foreground"
+                      className={`text-lg font-extrabold mt-1 ${
+                        result.ratio > 2.0
+                          ? "text-red-600"
+                          : result.ratio > 1.2
+                          ? "text-amber-600"
+                          : "text-slate-900"
                       }`}
                     >
                       {result.ratio}x
                     </p>
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-[10px] text-slate-400">
                       {result.ratio > 1 ? "Lebih mahal" : "Wajar"}
                     </span>
                   </Card>
 
-                  <Card className="p-3">
-                    <span className="text-[10px] text-muted-foreground block">
+                  <Card className="p-3.5 bg-white border-slate-200 shadow-xs">
+                    <span className="text-[11px] font-medium text-slate-500 block">
                       Residual vs Ambang
                     </span>
                     <p
-                      className={`text-base font-bold mt-1 ${
-                        result.residual > result.threshold ? "text-destructive" : "text-foreground"
+                      className={`text-lg font-extrabold mt-1 ${
+                        result.residual > result.threshold ? "text-red-600" : "text-emerald-600"
                       }`}
                     >
                       {result.residual}
                     </p>
-                    <span className="text-[9px] text-muted-foreground">
-                      Ambang: {result.threshold.toFixed(2)}
+                    <span className="text-[10px] text-slate-400">
+                      Ambang Batas: {result.threshold.toFixed(2)}
                     </span>
                   </Card>
                 </div>
 
-                {/* Komparasi Nilai Bar Chart Card */}
-                <Card>
+                {/* Komparasi Nilai Bar Chart Card (Terang & Tajam) */}
+                <Card className="bg-white border-slate-200 shadow-xs">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
-                      <BarChart3 className="size-3.5" />
-                      Komparasi Nilai Ongkir (BRL)
+                    <CardTitle className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                      <BarChart3 className="size-3.5 text-blue-600" />
+                      Komparasi Nilai Ongkir (Real Brasil - BRL)
                     </CardTitle>
-                    <CardDescription className="text-[10px]">
-                      Perbandingan tarif wajar rekomendasi model vs ongkir aktual
+                    <CardDescription className="text-[11px] text-slate-500">
+                      Perbandingan estimasi tarif wajar rekomendasi AI (Biru) vs tagihan invoice kurir
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -712,34 +735,34 @@ export default function ProfitLeakDashboard() {
                         <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                           <XAxis
                             dataKey="name"
-                            tick={{ fill: "#94a3b8", fontSize: 11 }}
-                            axisLine={{ stroke: "#334155" }}
+                            tick={{ fill: "#475569", fontSize: 11, fontWeight: 500 }}
+                            axisLine={{ stroke: "#e2e8f0" }}
                             tickLine={false}
                           />
                           <YAxis
                             tick={{ fill: "#64748b", fontSize: 10 }}
-                            axisLine={{ stroke: "#334155" }}
+                            axisLine={{ stroke: "#e2e8f0" }}
                             tickLine={false}
                             unit=" R$"
                           />
                           <Tooltip
-                            cursor={{ fill: "rgba(255, 255, 255, 0.04)", radius: 6 }}
+                            cursor={{ fill: "rgba(0, 0, 0, 0.04)", radius: 6 }}
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 const item = payload[0];
                                 const isActual = item.payload.name === "Ongkir Ditagihkan";
                                 return (
-                                  <div className="rounded-lg border border-slate-700 bg-slate-900 text-slate-100 px-3 py-2 text-xs shadow-xl font-sans">
-                                    <div className="font-semibold text-white">{item.payload.name}</div>
+                                  <div className="rounded-lg border border-slate-200 bg-white text-slate-900 px-3.5 py-2.5 text-xs shadow-lg font-sans">
+                                    <div className="font-semibold text-slate-800">{item.payload.name}</div>
                                     <div className="mt-1 flex items-center gap-1.5">
-                                      <span className="text-slate-400">Nilai:</span>
+                                      <span className="text-slate-500">Tarif:</span>
                                       <span
-                                        className={` font-bold ${
+                                        className={`font-bold ${
                                           isActual && result.isLeak
-                                            ? "text-red-400"
+                                            ? "text-red-600"
                                             : isActual
-                                            ? "text-slate-200"
-                                            : "text-blue-400"
+                                            ? "text-slate-700"
+                                            : "text-blue-600"
                                         }`}
                                       >
                                         R$ {Number(item.value).toFixed(2)} BRL
@@ -753,13 +776,14 @@ export default function ProfitLeakDashboard() {
                           />
                           <ReferenceLine
                             y={result.predictedRate}
-                            stroke="#38bdf8"
-                            strokeDasharray="3 3"
+                            stroke="#2563eb"
+                            strokeDasharray="4 4"
                             label={{
-                              value: "Batas Wajar",
-                              fill: "#38bdf8",
+                              value: "Baseline Wajar",
+                              fill: "#2563eb",
                               position: "insideTopRight",
                               fontSize: 10,
+                              fontWeight: 600,
                             }}
                           />
                           <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
@@ -773,27 +797,27 @@ export default function ProfitLeakDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Rekomendasi Audit Logistik */}
-                <Card className="bg-muted/30">
-                  <CardContent className="pt-4 text-xs text-muted-foreground flex items-start gap-2.5">
-                    <CheckCircle2 className="size-4 text-foreground mt-0.5 shrink-0" />
+                {/* Rekomendasi Audit Logistik Terang */}
+                <Card className="bg-slate-50 border-slate-200 shadow-xs">
+                  <CardContent className="pt-3.5 pb-3.5 text-xs text-slate-600 flex items-start gap-2.5">
+                    <CheckCircle2 className="size-4 text-blue-600 mt-0.5 shrink-0" />
                     <div>
-                      <span className="font-semibold text-foreground block mb-0.5">
-                        Rekomendasi Tindak Lanjut:
+                      <span className="font-semibold text-slate-900 block mb-0.5">
+                        Rekomendasi Tindak Lanjut Logistik:
                       </span>
                       {result.isLeak ? (
-                        <p>
-                          Lakukan audit terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
-                          Potensi penghematan biaya logistik sebesar{" "}
-                          <strong className="text-foreground ">
+                        <p className="leading-relaxed text-slate-700">
+                          Lakukan evaluasi terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
+                          Potensi penghematan biaya sebesar{" "}
+                          <strong className="text-red-600 font-bold">
                             R$ {result.potentialLoss.toFixed(2)} BRL
                           </strong>{" "}
-                          dapat diajukan sebagai klaim penyesuaian tarif.
+                          dapat diajukan sebagai klaim penyesuaian tarif logistik.
                         </p>
                       ) : (
-                        <p>
-                          Nilai residual berada pada rentang wajar di bawah ambang batas toleransi model.
-                          Transaksi ini efisien dan tidak memerlukan audit manual.
+                        <p className="leading-relaxed text-slate-700">
+                          Nilai residual berada pada rentang wajar di bawah ambang batas toleransi ({result.threshold}).
+                          Transaksi logistik ini efisien dan tidak memerlukan tinjauan audit manual.
                         </p>
                       )}
                     </div>
@@ -805,8 +829,8 @@ export default function ProfitLeakDashboard() {
         </div>
       </main>
 
-      {/* Footer Tim */}
-      <footer className="border-t py-4 text-center text-xs text-muted-foreground">
+      {/* Footer Tim Terang */}
+      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
         ProfitLeak AI © 2026 • Dikembangkan oleh Tim KOMEM • Hackathon 2026
       </footer>
     </div>
