@@ -5,8 +5,8 @@ agar tidak bentrok dengan backend). Backup v5 dibuat otomatis di awal.
 
 Perluasan dibanding v5 (yang hanya ongkir):
   1. rate_model   - tarif wajar ongkir (HistGradientBoosting pada log1p(freight))
-  2. margin_risk  - ongkir menelan terlalu besar porsi harga jual (indikasi rugi)
-  3. anomaly      - kombinasi fitur tidak wajar (IsolationForest)
+  2. margin_risk  - model klasifikasi risiko transaksi tidak ekonomis
+                    (ongkir menyerap porsi besar harga jual)
 
 Catatan kejujuran data (lihat 'data_limitations' pada JSON info):
   Dataset Olist TIDAK memiliki kolom harga modal (cost/COGS), diskon, maupun
@@ -31,7 +31,6 @@ import pandas as pd
 from sklearn.ensemble import (
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
-    IsolationForest,
 )
 from sklearn.model_selection import train_test_split
 
@@ -193,7 +192,7 @@ def evaluate_variant(df: pd.DataFrame, features: list[str], idx_train, idx_valid
     'threshold' padahal backend membandingkannya sebagai rasio.
     """
     model = HistGradientBoostingRegressor(
-        max_iter=1200, learning_rate=0.05, max_leaf_nodes=63,
+        max_iter=600, learning_rate=0.05, max_leaf_nodes=63,
         random_state=RANDOM_STATE,
     )
     model.fit(df.loc[idx_train, features], df.loc[idx_train, "y"])
@@ -225,7 +224,7 @@ def evaluate_variant(df: pd.DataFrame, features: list[str], idx_train, idx_valid
     }
 
 
-def rate_model_quality(r2_test, eval_rate, eval_margin, eval_anom, eval_combined,
+def rate_model_quality(r2_test, eval_rate, eval_margin, eval_combined,
                        gt_definition=""):
     """Nilai kualitas model 1-100 dari metrik nyata (bukan karangan).
 
@@ -244,18 +243,16 @@ def rate_model_quality(r2_test, eval_rate, eval_margin, eval_anom, eval_combined
     agar tidak menyesatkan penilaian.
 
     Bobot:
-      R2 regresi tarif          45%  (inti kualitas model)
+      R2 regresi tarif          50%  (inti kualitas model)
       F1 detektor margin        20%  (deteksi kerugian ongkir vs harga)
       F1 gabungan               20%  (kinerja sistem)
-      F1 detektor anomaly        5%  (sinyal tambahan)
       F1 detektor rate           5%  (pelengkap)
-      Cakupan/precision bonus    5%  (konsistensi precision tinggi)
+      Precision gabungan         5%  (konsistensi precision tinggi)
     """
     components = [
-        ("R2 uji (regresi tarif)", float(r2_test), 0.45),
+        ("R2 uji (regresi tarif)", float(r2_test), 0.50),
         ("F1 detektor margin", float(eval_margin["f1"]), 0.20),
         ("F1 gabungan", float(eval_combined["f1"]), 0.20),
-        ("F1 detektor anomaly", float(eval_anom["f1"]), 0.05),
         ("F1 detektor rate", float(eval_rate["f1"]), 0.05),
         ("Precision gabungan", float(eval_combined["precision"]), 0.05),
     ]
@@ -288,8 +285,6 @@ def rate_model_quality(r2_test, eval_rate, eval_margin, eval_anom, eval_combined
         "Ini pembelajaran nyata, bukan aturan yang menyalin definisi label.",
         "Detektor rate lemah untuk kerugian jenis ini karena median rasio tarif "
         "pada transaksi tidak ekonomis hanya ~1.0x. Ini batas konsep, bukan bug.",
-        "Detektor anomaly adalah IsolationForest; cocok untuk outlier ekstrem, "
-        "kurang cocok untuk klasifikasi risiko (F1 rendah). Bobotnya kecil.",
         "Batas data: tidak ada kolom modal/diskon, sehingga aspek itu tidak dinilai.",
     ]
 
@@ -415,20 +410,6 @@ def main() -> None:
         f"(F1 validasi {best_pf1:.3f}); input tanpa freight_value."
     )
 
-    # --- Detektor 3: anomaly (IsolationForest) ---
-    anomaly_features = features + ["freight_ratio"]
-    iso = IsolationForest(
-        n_estimators=200, contamination=0.02, random_state=RANDOM_STATE, n_jobs=-1
-    )
-    iso.fit(df.loc[idx_train, anomaly_features])
-    anomaly_score = -iso.score_samples(df[anomaly_features])
-
-    lo = float(np.quantile(anomaly_score[idx_train], 0.01))
-    hi = float(np.quantile(anomaly_score[idx_train], 0.99))
-    span = max(hi - lo, 1e-9)
-    df["anomaly_score_norm"] = np.clip((anomaly_score - lo) / span, 0.0, 1.0)
-    df["is_anomaly"] = iso.predict(df[anomaly_features]) == -1
-
     # --- Evaluasi pada data uji ---
     # Ground truth: transaksi TIDAK EKONOMIS, yaitu ongkir menyerap > 50% dari
     # harga jual. Definisi ini bermakna bisnis dan cukup umum (~17%) untuk
@@ -459,16 +440,15 @@ def main() -> None:
 
     leak_mask = (ratio > threshold_ratio)
     margin_mask = (test["risk_proba"] >= MARGIN_PROBA_THRESHOLD).to_numpy()
-    anomaly_mask = test["is_anomaly"].to_numpy()
 
-    log("[6/6] Evaluasi detektor pada data uji (ground truth: ongkir > harga):")
+    log("[6/6] Evaluasi detektor pada data uji "
+        "(ground truth: ongkir menyerap >50% harga):")
     eval_rate = rates(leak_mask, truth)
     eval_margin = rates(margin_mask, truth)
-    eval_anom = rates(anomaly_mask, truth)
-    eval_all = rates(leak_mask | margin_mask | anomaly_mask, truth)
+    eval_all = rates(leak_mask | margin_mask, truth)
     for name, ev in [
         ("rate(ongkir)", eval_rate), ("margin", eval_margin),
-        ("anomaly", eval_anom), ("gabungan", eval_all),
+        ("gabungan", eval_all),
     ]:
         log(
             f"      {name:14s} P={ev['precision']:.3f} R={ev['recall']:.3f} "
@@ -494,13 +474,10 @@ def main() -> None:
         "currency": CURRENCY,
         # --- tambahan v6 ---
         "threshold_residual_log": threshold_residual,
-        "detectors": ["rate", "margin", "anomaly"],
+        "detectors": ["rate", "margin"],
         "margin_risk_model": risk_model,
         "margin_risk_features": risk_features,
         "margin_proba_threshold": MARGIN_PROBA_THRESHOLD,
-        "anomaly_model": iso,
-        "anomaly_features": anomaly_features,
-        "anomaly_norm_bounds": [lo, hi],
         "feature_defaults": {
             "density_g_cm3": float(df["density_g_cm3"].median()),
         },
@@ -513,8 +490,9 @@ def main() -> None:
         "project": "ProfitLeak AI",
         "version": "v6",
         "approach": (
-            "Multi-detektor: tarif ongkir + risiko margin ongkir/harga + anomaly. "
-            "Perluasan dari v5 yang hanya memodelkan ongkir."
+            "Dua detektor: tarif ongkir wajar + model risiko transaksi tidak "
+            "ekonomis (ongkir menyerap porsi besar harga jual). Perluasan dari "
+            "v5 yang hanya memodelkan ongkir."
         ),
         "rate_model": "HistGradientBoostingRegressor",
         "rate_features": features,
@@ -547,11 +525,6 @@ def main() -> None:
                 "threshold": round(MARGIN_PROBA_THRESHOLD, 4),
                 "threshold_type": "probabilitas",
             },
-            "anomaly": {
-                "description": "Kombinasi fitur tidak wajar (IsolationForest).",
-                "features": anomaly_features,
-                "contamination": 0.02,
-            },
         },
         "evaluation_test": {
             "definition_of_real_loss": (
@@ -560,8 +533,22 @@ def main() -> None:
             ),
             "rate": eval_rate,
             "margin": eval_margin,
-            "anomaly": eval_anom,
             "combined": eval_all,
+        },
+        "scope": {
+            "covered": [
+                "tarif ongkir aktual jauh di atas tarif wajar",
+                "ongkir menyerap porsi besar dari harga jual",
+            ],
+            "not_covered": [
+                "harga modal / COGS / HPP",
+                "diskon",
+                "margin keuntungan bersih",
+            ],
+            "reason": (
+                "Dataset Olist tidak memuat kolom harga modal maupun diskon, "
+                "sehingga aspek tersebut tidak dapat dilatih."
+            ),
         },
         "data_limitations": [
             "Dataset Olist tidak memiliki kolom harga modal (cost/COGS/HPP).",
@@ -585,7 +572,6 @@ def main() -> None:
         r2_test=chosen["r2_test"],
         eval_rate=eval_rate,
         eval_margin=eval_margin,
-        eval_anom=eval_anom,
         eval_combined=eval_all,
         gt_definition=(
             "freight_value/price > 0.5 (ongkir menyerap >50% harga jual "

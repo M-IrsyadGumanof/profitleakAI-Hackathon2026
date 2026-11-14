@@ -1,4 +1,4 @@
-﻿"""ProfitLeak AI - Backend API.
+"""ProfitLeak AI - Backend API.
 
 Melayani prediksi tarif wajar (ongkir) dan deteksi kebocoran profit
 menggunakan model final v5 (HistGradientBoostingRegressor).
@@ -73,6 +73,23 @@ CURRENCY = "BRL"
 
 ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+# Cakupan deteksi yang jujur - disampaikan eksplisit ke klien/frontend.
+SCOPE: dict[str, Any] = {
+    "covered": [
+        "tarif ongkir aktual jauh di atas tarif wajar",
+        "ongkir menyerap porsi besar dari harga jual",
+    ],
+    "not_covered": [
+        "harga modal / COGS / HPP",
+        "diskon",
+        "margin keuntungan bersih",
+    ],
+    "reason": (
+        "Dataset Olist tidak memuat kolom harga modal maupun diskon, sehingga "
+        "aspek tersebut tidak dapat dilatih."
+    ),
+}
+
 # Fallback rentang valid bila metadata belum/tidak memuat valid_ranges.
 DEFAULT_VALID_RANGES: dict[str, tuple[float, float]] = {
     "weight_kg": (0.05, 30.0),
@@ -97,9 +114,6 @@ _BUNDLE: dict[str, Any] = {}
 _THRESHOLD: float = DEFAULT_THRESHOLD
 _MARGIN_THRESHOLD: float = DEFAULT_MARGIN_RATIO_THRESHOLD
 _VALID_RANGES: dict[str, tuple[float, float]] = dict(DEFAULT_VALID_RANGES)
-_ANOMALY_MODEL: Any = None
-_ANOMALY_FEATURES: list[str] = []
-_ANOMALY_BOUNDS: tuple[float, float] = (0.0, 1.0)
 _FEATURE_DEFAULTS: dict[str, float] = {"density_g_cm3": 0.1118925831202046}
 _RISK_MODEL: Any = None
 _RISK_FEATURES: list[str] = []
@@ -219,29 +233,6 @@ def _predict_rate(values: dict[str, float]) -> float:
     return float(np.expm1(pred_log))
 
 
-def _anomaly_norm(values: dict[str, float], price: float, freight_actual: float) -> float:
-    """Skor anomali ternormalisasi 0..1 (0 = normal)."""
-    if _ANOMALY_MODEL is None:
-        return 0.0
-    try:
-        feat = dict(values)
-        feat["price_log"] = float(np.log1p(price))
-        if "density_g_cm3" not in feat or feat.get("density_g_cm3") is None:
-            feat["density_g_cm3"] = _density_from(
-                values.get("product_weight_g"), values["weight_kg"],
-                values.get("length_cm"), values.get("height_cm"),
-                values.get("width_cm"),
-            )
-        feat["freight_ratio"] = float(freight_actual) / max(float(price), 1e-9)
-        X = np.asarray([[float(feat.get(n, 0.0)) for n in _ANOMALY_FEATURES]], dtype=float)
-        raw = float(-_ANOMALY_MODEL.score_samples(X)[0])
-        lo, hi = _ANOMALY_BOUNDS
-        span = max(hi - lo, 1e-9)
-        return float(min(max((raw - lo) / span, 0.0), 1.0))
-    except Exception:
-        return 0.0
-
-
 # ---------------------------------------------------------------------------
 # Lifespan: muat model & metadata satu kali
 # ---------------------------------------------------------------------------
@@ -250,8 +241,7 @@ def _anomaly_norm(values: dict[str, float], price: float, freight_actual: float)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _MODEL, _INFO, _BUNDLE, _THRESHOLD, _VALID_RANGES, _MARGIN_THRESHOLD
-    global _ANOMALY_MODEL, _ANOMALY_FEATURES, _ANOMALY_BOUNDS, _FEATURE_DEFAULTS
-    global _RISK_MODEL, _RISK_FEATURES, _RISK_PROBA_THRESHOLD
+    global _FEATURE_DEFAULTS, _RISK_MODEL, _RISK_FEATURES, _RISK_PROBA_THRESHOLD
 
     missing = [str(p) for p in (MODEL_PATH, INFO_PATH) if not p.exists()]
     if missing:
@@ -291,13 +281,6 @@ async def lifespan(app: FastAPI):
     _MARGIN_THRESHOLD = float(
         _BUNDLE.get("margin_ratio_threshold", DEFAULT_MARGIN_RATIO_THRESHOLD)
     )
-    _ANOMALY_MODEL = _BUNDLE.get("anomaly_model")
-    _ANOMALY_FEATURES = list(_BUNDLE.get("anomaly_features") or [])
-    bounds = _BUNDLE.get("anomaly_norm_bounds") or [0.0, 1.0]
-    try:
-        _ANOMALY_BOUNDS = (float(bounds[0]), float(bounds[1]))
-    except (TypeError, ValueError, IndexError):
-        _ANOMALY_BOUNDS = (0.0, 1.0)
     defaults = _BUNDLE.get("feature_defaults")
     if isinstance(defaults, dict):
         _FEATURE_DEFAULTS = {
@@ -325,9 +308,6 @@ async def lifespan(app: FastAPI):
         _THRESHOLD = DEFAULT_THRESHOLD
         _MARGIN_THRESHOLD = DEFAULT_MARGIN_RATIO_THRESHOLD
         _VALID_RANGES = dict(DEFAULT_VALID_RANGES)
-        _ANOMALY_MODEL = None
-        _ANOMALY_FEATURES = []
-        _ANOMALY_BOUNDS = (0.0, 1.0)
         _RISK_MODEL = None
         _RISK_FEATURES = []
 
@@ -340,8 +320,9 @@ app = FastAPI(
     title="ProfitLeak AI API",
     version=SERVICE_VERSION,
     description=(
-        "API prediksi tarif wajar dan deteksi kebocoran profit multi-faktor "
-        "(tarif ongkir, margin ongkir/harga, anomali)."
+        "API deteksi transaksi tidak ekonomis berbasis harga jual & ongkir. "
+        "Mencakup: tarif ongkir di atas tarif wajar, dan ongkir yang menyerap "
+        "porsi besar harga jual. Tidak mencakup harga modal maupun diskon."
     ),
     lifespan=lifespan,
 )
@@ -526,7 +507,9 @@ def model_info() -> dict[str, Any]:
         "info": _INFO,
         "threshold": _THRESHOLD,
         "margin_threshold": _MARGIN_THRESHOLD,
+        "margin_proba_threshold": _RISK_PROBA_THRESHOLD,
         "detectors": _BUNDLE.get("detectors", ["rate"]),
+        "scope": SCOPE,
         "valid_ranges": {
             name: [low, high] for name, (low, high) in _VALID_RANGES.items()
         },
@@ -583,10 +566,10 @@ def _risk_proba(values: dict[str, float], price: float) -> float:
 def _analyse(values: dict[str, float], actual_rate: float) -> dict[str, Any]:
     """Jalankan semua detektor dan susun alasan + skor risiko.
 
-    Tiga detektor:
+    Dua detektor:
       rate    -> tarif aktual jauh di atas tarif wajar
-      margin  -> ongkir menelan porsi terlalu besar dari harga jual
-      anomaly -> kombinasi fitur tidak wajar
+      margin  -> model memprediksi transaksi tidak ekonomis
+                 (ongkir menyerap porsi besar dari harga jual)
     """
     predicted_rate = _predict_rate(values)
     if predicted_rate <= 0:
@@ -605,8 +588,6 @@ def _analyse(values: dict[str, float], actual_rate: float) -> dict[str, Any]:
     is_rate_leak = bool(ratio > _THRESHOLD)
     risk_score_model = _risk_proba(values, price)
     is_margin_risk = bool(risk_score_model >= _RISK_PROBA_THRESHOLD)
-    anomaly_score = _anomaly_norm(values, price, actual_rate)
-    is_anomaly = bool(anomaly_score > 0.85)
 
     reasons: list[dict[str, str]] = []
     if is_rate_leak:
@@ -636,24 +617,13 @@ def _analyse(values: dict[str, float], actual_rate: float) -> dict[str, Any]:
                 "minimum order agar ongkir tidak menghabiskan margin."
             ),
         })
-    if is_anomaly:
-        reasons.append({
-            "code": "unusual_pattern",
-            "severity": "medium",
-            "detail": (
-                f"Kombinasi berat/jarak/volume/harga tidak biasa "
-                f"(skor anomali {anomaly_score:.2f})."
-            ),
-            "remedy": "Periksa kembali data transaksi; pastikan tidak ada salah input.",
-        })
+    is_leak = bool(is_rate_leak or is_margin_risk)
 
-    is_leak = bool(is_rate_leak or is_margin_risk or is_anomaly)
-
-    # Skor risiko 0..1: gabungan rasio tarif, probabilitas risiko, anomali.
+    # Skor risiko 0..1: gabungan rasio tarif dan probabilitas risiko margin.
     rate_component = min(max((ratio - 1.0) / max(_THRESHOLD - 1.0, 1e-6), 0.0), 1.0)
     risk_component = min(max(risk_score_model, 0.0), 1.0)
     risk_score = round(
-        0.45 * rate_component + 0.40 * risk_component + 0.15 * anomaly_score, 4
+        0.55 * rate_component + 0.45 * risk_component, 4
     )
 
     return {
@@ -668,7 +638,6 @@ def _analyse(values: dict[str, float], actual_rate: float) -> dict[str, Any]:
         "detectors": {
             "rate": is_rate_leak,
             "margin": is_margin_risk,
-            "anomaly": is_anomaly,
         },
     }
 
@@ -802,7 +771,6 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
         "leaks": 0,
         "rate_leaks": 0,
         "margin_risks": 0,
-        "anomalies": 0,
         "estimated_loss": 0.0,
     }
     reason_counts: dict[str, int] = {}
@@ -865,8 +833,6 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
             totals["rate_leaks"] += 1
         if res["detectors"]["margin"]:
             totals["margin_risks"] += 1
-        if res["detectors"]["anomaly"]:
-            totals["anomalies"] += 1
 
         # Estimasi kerugian: kelebihan tarif aktual atas tarif wajar.
         excess = max(float(actual) - res["predicted_rate"], 0.0)
@@ -909,7 +875,6 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
             "Naikkan harga jual atau terapkan minimum order agar ongkir tidak "
             "menghabiskan margin."
         ),
-        "unusual_pattern": "Audit data transaksi untuk kesalahan input.",
     }
     top_recommendations = [
         {"code": code, "count": count, "recommendation": remedies.get(code, "")}
