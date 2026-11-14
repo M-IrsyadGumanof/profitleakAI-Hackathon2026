@@ -1365,9 +1365,12 @@ async def _advice_call_gemini(context: dict[str, Any]) -> dict[str, Any] | None:
                 if response.status_code == 200:
                     data = response.json()
                     candidate = (data.get("candidates") or [{}])[0]
-                    text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
-                    if text:
-                        return json.loads(text)
+                    parts = (candidate.get("content") or {}).get("parts", [])
+                    full_text = "".join(
+                        p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p
+                    )
+                    if full_text.strip():
+                        return json.loads(full_text.strip())
         return None
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
         # Timeout, koneksi gagal, atau JSON rusak -> fallback rule_based.
@@ -1630,7 +1633,7 @@ async def _copilot_call_gemini(
         "contents": contents,
         "generationConfig": {
             "temperature": 0.4,
-            "maxOutputTokens": 1200,
+            "maxOutputTokens": 3000,
         },
     }
 
@@ -1646,11 +1649,12 @@ async def _copilot_call_gemini(
                 if resp.status_code == 200:
                     data = resp.json()
                     candidate = (data.get("candidates") or [{}])[0]
-                    parts = (candidate.get("content") or {}).get("parts", [{}])
-                    for part in parts:
-                        text = part.get("text")
-                        if text:
-                            return text
+                    parts = (candidate.get("content") or {}).get("parts", [])
+                    full_text = "".join(
+                        p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p
+                    )
+                    if full_text.strip():
+                        return full_text.strip()
         return None
     except Exception:
         return None
