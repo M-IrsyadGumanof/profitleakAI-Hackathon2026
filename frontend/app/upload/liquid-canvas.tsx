@@ -20,24 +20,15 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     let gl: WebGLRenderingContext | null = null;
     let program: WebGLProgram | null = null;
 
-    // Coba inisialisasi WebGL
     try {
       gl =
-        canvas.getContext("webgl", { alpha: true, antialias: true }) ||
-        (canvas.getContext("experimental-webgl") as WebGLRenderingContext | null);
+        canvas.getContext("webgl", { alpha: true, antialias: true, premultipliedAlpha: false }) ||
+        (canvas.getContext("experimental-webgl", { alpha: true }) as WebGLRenderingContext | null);
     } catch {
       gl = null;
     }
 
-    // Jika WebGL tidak didukung, fallback sederhana
-    if (!gl) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#0a1324";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      return;
-    }
+    if (!gl) return;
 
     const vsSource = `
       attribute vec2 position;
@@ -48,7 +39,7 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
       }
     `;
 
-    // Fragment Shader: Netlify Aurora (Modul 24390) + ChromaFlow Liquid (Modul 23329) + Scanlines (Modul 69375)
+    // Fragment Shader: Aurora Harmonik Selaras Tema Light Mode (Royal Blue & Cyan)
     const fsSource = `
       precision highp float;
       varying vec2 vUv;
@@ -61,7 +52,6 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
 
       #define PI 3.14159265359
 
-      // 3D Simplex noise untuk deformasi tirai Aurora organik
       vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
       vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 
@@ -88,7 +78,7 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
                  + i.x + vec4(0.0, i1.x, i2.x, 1.0));
 
         float n_ = 0.142857142857;
-        vec3  ns = n_ * D.wyz - D.xzx;
+        vec3 ns = n_ * D.wyz - D.xzx;
 
         vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
 
@@ -125,9 +115,8 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
         return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
       }
 
-      // Evaluasi tirai sinar Aurora (Netlify Module 24390)
       vec2 evalCurtain(vec2 uv, float curtainIdx, float phaseOffset, float timeVal) {
-        float i = timeVal * 0.045 + phaseOffset;
+        float i = timeVal * 0.04 + phaseOffset;
         float a = 81.0 + curtainIdx * 31.7;
         float aspect = u_resolution.x / max(u_resolution.y, 1.0);
         float s = (uv.x - 0.5) * aspect * 2.0;
@@ -136,26 +125,21 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
         float o = fract(sin(a * 78.2) * 2847.1) * (2.0 * PI);
         float l = fract(sin(a * 41.6) * 1593.7) * (2.0 * PI);
 
-        // Harmonik gelombang sinusoidal yang mengalun
         float u = sin(s * 0.75 + i * 0.45 + n) * 0.16
                 + sin(s * 1.6 + i * 0.65 + o) * 0.08
                 + sin(s * 2.8 + i * 0.32 + l) * 0.04;
 
-        // Variasi noise 3D
         float h = snoise(vec3(s * 0.5, i * 0.25, a * 0.1));
 
-        // Dasar ketinggian tirai
         float waviness = 1.35;
         float c_curve = 0.88 + u * waviness + h * 0.14 * waviness;
         float p_pos = s + h * 2.4;
 
-        // Detail struktur sinar vertikal (ray density)
         float rayDensity = 0.08;
         float m_ray = mix(6.0, 22.0, rayDensity);
         float S_seed = fract(sin(a * 53.7) * 3847.2) * (2.0 * PI);
         float M = pow(sin(p_pos * (m_ray * 0.15) + i * 0.12 + S_seed) * 0.5 + 0.5, 1.5);
 
-        // Ketinggian vertikal dan atenuasi
         float v_height = 1.25;
         float E = v_height * mix(0.4, 1.0, M);
         float w = uv.y - (1.0 - c_curve);
@@ -174,89 +158,70 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
       void main() {
         vec2 uv = vUv;
 
-        // 1. Deformasi Fluida Cair ChromaFlow (Interaktif Mouse)
+        // 1. Deformasi Fluida Interaktif (ChromaFlow)
         vec2 toMouse = uv - u_mouse;
         toMouse.x *= (u_resolution.x / max(u_resolution.y, 1.0));
         float dist = length(toMouse);
 
-        // Gelombang riak air yang menyebar saat mouse bergerak
-        float ripple = sin(dist * 34.0 - u_time * 6.5) * exp(-dist * 4.6);
-        vec2 fluidOffset = normalize(toMouse + vec2(0.0001)) * ripple * 0.03 * u_hover;
-        vec2 velOffset = u_mouse_vel * exp(-dist * 4.0) * 0.045 * u_hover;
+        float ripple = sin(dist * 32.0 - u_time * 6.5) * exp(-dist * 4.4);
+        vec2 fluidOffset = normalize(toMouse + vec2(0.0001)) * ripple * 0.028 * u_hover;
+        vec2 velOffset = u_mouse_vel * exp(-dist * 3.8) * 0.04 * u_hover;
         
         vec2 distortedUv = uv + fluidOffset + velOffset;
 
-        // 2. Multi-layer Tirai Aurora Netlify
-        // Tirai 1 (Primer)
+        // 2. Evaluasi Tirai Aurora
         vec2 i0 = evalCurtain(distortedUv, 0.0, 0.0, u_time);
         float t_acc = i0.x * i0.y;
         float r_acc = i0.y;
 
-        // Tirai 2 (Sekunder, fase 3.14)
         vec2 i1 = evalCurtain(distortedUv, 1.0, 3.1415, u_time);
         float a1 = i1.y * 0.65;
         t_acc += i1.x * a1;
         r_acc += a1;
 
-        // Tirai 3 (Tersier, fase 6.28)
         vec2 i2 = evalCurtain(distortedUv, 2.0, 6.283, u_time);
         float a2 = i2.y * 0.35;
         t_acc += i2.x * a2;
         r_acc += a2;
 
-        // Distribusi warna berdasarkan ketinggian tirai
-        float balance = 0.22;
-        float c_balance = mix(2.5, 0.4, balance);
-        float a_norm = pow(clamp(t_acc / (r_acc + 0.001), 0.0, 1.0), c_balance);
+        float a_norm = pow(clamp(t_acc / (r_acc + 0.001), 0.0, 1.0), 1.8);
+        float h_col = smoothstep(0.0, 0.3, a_norm);
+        float f_col = smoothstep(0.35, 0.9, a_norm);
 
-        float h_col = smoothstep(0.0, 0.25, a_norm);
-        float f_col = smoothstep(0.4, 0.85, a_norm);
-
-        // Palet Warna Asli Netlify Drop:
-        // Teal 500  : #00ad9f -> rgb(0.0, 0.68, 0.62)
-        // Teal 200  : #8eebe7 -> rgb(0.56, 0.92, 0.91)
-        // Aurora C  : #0ff0e1 -> rgb(0.06, 0.94, 0.88)
-        // Royal Blue: #2563eb -> rgb(0.145, 0.388, 0.922)
-        vec3 colA = vec3(0.0, 0.68, 0.62);
-        vec3 colB = vec3(0.56, 0.92, 0.91);
-        vec3 colC = vec3(0.06, 0.94, 0.88);
-        vec3 colAccent = vec3(0.145, 0.388, 0.922);
+        // Palet Warna Selaras dengan UI Light Mode:
+        // Royal Blue (#2563eb), Sky Cyan (#0284c7), Light Cyan (#38bdf8), Indigo Accent (#4f46e5)
+        vec3 colA = vec3(0.145, 0.388, 0.922); // Royal Blue #2563eb
+        vec3 colB = vec3(0.008, 0.518, 0.780); // Sky Cyan #0284c7
+        vec3 colC = vec3(0.220, 0.741, 0.973); // Light Cyan #38bdf8
+        vec3 colIndigo = vec3(0.310, 0.275, 0.898); // Indigo #4f46e5
 
         vec3 auroraCol = mix(mix(colA, colB, h_col), colC, f_col);
 
-        // Tambahkan kilau cairan biru royal di jalur kursor
-        float liquidGlow = exp(-dist * 5.5) * length(u_mouse_vel) * 2.8 * u_hover;
-        auroraCol = mix(auroraCol, colAccent, clamp(liquidGlow, 0.0, 0.75));
+        // Refraksi riak cairan saat mouse bergerak
+        float liquidGlow = exp(-dist * 5.0) * length(u_mouse_vel) * 2.2 * u_hover;
+        auroraCol = mix(auroraCol, colIndigo, clamp(liquidGlow, 0.0, 0.6));
 
-        // Jika user sedang drag file ke atas dropzone, berikan kilauan aktif
-        float dragPulse = u_drag * (sin(u_time * 8.0) * 0.15 + 0.25);
-        auroraCol += vec3(0.1, 0.3, 0.35) * dragPulse;
+        // Efek denyut saat drag file
+        float dragGlow = u_drag * (sin(u_time * 8.0) * 0.15 + 0.3);
+        auroraCol += vec3(0.05, 0.2, 0.3) * dragGlow;
 
-        // Skala intensitas cahaya aurora
-        float intensity = 1.15;
-        vec3 finalRgb = auroraCol * r_acc * intensity;
+        // Scanline halus transparan
+        float scanline = sin(uv.y * u_resolution.y * 1.5) * 0.5 + 0.5;
+        auroraCol *= (1.0 - 0.08 * scanline);
 
-        // 3. Filter Scanline CRT High-Tech (Netlify Module 69375)
-        float scanline = sin(uv.y * u_resolution.y * 1.6) * 0.5 + 0.5;
-        finalRgb *= (1.0 - 0.18 * scanline);
+        // Opasitas adaptif: sangat transparan dan lembut di atas latar putih/light-slate
+        float alpha = clamp(r_acc * 0.45 + (liquidGlow * 0.4) + (u_drag * 0.18), 0.0, 0.60);
 
-        // Background Gradien Navy/Teal Dalam Ala Netlify
-        vec3 bgGrad = mix(vec3(0.05, 0.09, 0.18), vec3(0.02, 0.04, 0.10), uv.y);
-        vec3 composite = bgGrad + finalRgb;
-
-        // Transparansi halus
-        gl_FragColor = vec4(composite, 0.97);
+        gl_FragColor = vec4(auroraCol, alpha);
       }
     `;
 
-    // Helper kompilasi shader
     const createShader = (glCtx: WebGLRenderingContext, type: number, source: string) => {
       const shader = glCtx.createShader(type);
       if (!shader) return null;
       glCtx.shaderSource(shader, source);
       glCtx.compileShader(shader);
       if (!glCtx.getShaderParameter(shader, glCtx.COMPILE_STATUS)) {
-        console.warn("Shader compile error:", glCtx.getShaderInfoLog(shader));
         glCtx.deleteShader(shader);
         return null;
       }
@@ -274,13 +239,15 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.warn("Program link error:", gl.getProgramInfoLog(program));
       return;
     }
 
     gl.useProgram(program);
 
-    // Quad geometry (-1 to 1)
+    // Aktifkan blending transparan
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(
@@ -293,7 +260,6 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     gl.enableVertexAttribArray(posAttrLoc);
     gl.vertexAttribPointer(posAttrLoc, 2, gl.FLOAT, false, 0, 0);
 
-    // Uniform locations
     const uResLoc = gl.getUniformLocation(program, "u_resolution");
     const uTimeLoc = gl.getUniformLocation(program, "u_time");
     const uMouseLoc = gl.getUniformLocation(program, "u_mouse");
@@ -314,7 +280,7 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     const handleMouseMove = (e: MouseEvent) => {
       const rect = dropzone.getBoundingClientRect();
       const x = (e.clientX - rect.left) / Math.max(1, rect.width);
-      const y = 1.0 - (e.clientY - rect.top) / Math.max(1, rect.height); // WebGL Y is inverted
+      const y = 1.0 - (e.clientY - rect.top) / Math.max(1, rect.height);
 
       const now = performance.now();
       const dt = Math.max(0.001, (now - lastEventTime) / 1000);
@@ -369,20 +335,20 @@ export function LiquidCanvas({ isDragging = false }: LiquidCanvasProps) {
     dropzone.addEventListener("mouseenter", handleMouseEnter);
     dropzone.addEventListener("mouseleave", handleMouseLeave);
 
-    // Loop render WebGL 60fps
     const render = () => {
       if (!gl || !program) return;
 
       const now = performance.now();
       const elapsed = (now - startTime) / 1000;
 
-      // Lerp posisi mouse untuk kelancaran fluida
       currentMouseX += (targetMouseX - currentMouseX) * 0.15;
       currentMouseY += (targetMouseY - currentMouseY) * 0.15;
       mouseVelX *= 0.92;
       mouseVelY *= 0.92;
 
       gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
       gl.useProgram(program);
       gl.uniform2f(uResLoc, canvas.width, canvas.height);

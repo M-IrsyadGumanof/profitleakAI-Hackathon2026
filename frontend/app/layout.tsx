@@ -26,7 +26,7 @@ export default function RootLayout({
         <Navbar />
 
         {/* Main Content Area */}
-        <main className="flex-1 w-full">{children}</main>
+        <main className="flex-1 w-full pt-20 sm:pt-24">{children}</main>
 
         {/* Global Clean Footer */}
         <footer className="w-full border-t border-slate-200 bg-white py-6">
