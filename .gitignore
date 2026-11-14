@@ -25,3 +25,18 @@ dist/
 .ipynb_checkpoints/
 .vscode/
 .idea/
+
+# Backup Notebooks (v3, v4, dll.)
+*BACKUP*
+*.BACKUP_*.ipynb
+
+# Gambar / Plot
+*.png
+*.jpg
+*.jpeg
+*.svg
+
+# Catatan teks (kecualikan requirements.txt)
+*.txt
+!requirements.txt
+!**/requirements.txt
