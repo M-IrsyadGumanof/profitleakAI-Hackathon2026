@@ -46,7 +46,7 @@ export function InteractiveFAQ() {
         return (
           <div
             key={idx}
-            className="rounded-2xl bg-white border border-slate-200/90 shadow-xs overflow-hidden transition-all duration-200"
+            className="rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs overflow-hidden transition-all duration-200 hover:border-[#1E40AF]/30"
           >
             <button
               onClick={() => toggle(idx)}

@@ -18,7 +18,7 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       
-      {/* 3D Model Sticky Background: Bersih tanpa teks, tidak terscroll saat halaman discroll */}
+      {/* 3D Model Sticky Background: Bersih tanpa teks, clean saat di atas, blur halus saat discroll */}
       <Hero3D />
 
       {/* Konten Halaman yang Melayang Mulus di Atas Background 3D */}
@@ -30,8 +30,8 @@ export default function HomePage() {
           {/* Kolom Kiri: Headline, Subtitle, CTA & Telemetri Ringkas (Col 7) */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
             
-            {/* Eyebrow Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E0F2FE]/90 border border-[#BAE6FD] text-[#1E40AF] text-xs font-semibold shadow-xs mb-6 select-none backdrop-blur-xs">
+            {/* Eyebrow Pill Badge (Neutral Semi-transparent) */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/75 backdrop-blur-md border border-slate-200/80 text-slate-800 text-xs font-semibold shadow-xs mb-6 select-none">
               <Sparkles className="w-3.5 h-3.5 text-[#1E40AF]" />
               <span>Dual-Detector Logistics Margin Intelligence</span>
             </div>
@@ -62,7 +62,7 @@ export default function HomePage() {
 
               <Link
                 href="/dashboard"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-700 bg-white/90 hover:bg-white active:bg-slate-100 border border-slate-300 rounded-xl shadow-xs backdrop-blur-xs transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-700 bg-white/80 hover:bg-white active:bg-slate-100 border border-slate-300/80 rounded-xl shadow-xs backdrop-blur-md transition-colors"
               >
                 <Gauge className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500" />
                 <span>Buka Dashboard Demo</span>
@@ -70,17 +70,17 @@ export default function HomePage() {
             </div>
 
             {/* Micro Telemetry Bar */}
-            <div className="mt-8 pt-6 border-t border-slate-200/90 w-full flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
+            <div className="mt-8 pt-6 border-t border-slate-200/80 w-full flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="w-2 h-2 rounded-full bg-[#1E40AF]" />
                 <span>Akurasi Tarif: <strong className="text-slate-900 font-bold">R² 73.49%</strong></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#1E40AF]" />
+                <span className="w-2 h-2 rounded-full bg-[#1E40AF]" />
                 <span>F1-Score Margin: <strong className="text-slate-900 font-bold">85.94%</strong></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-sky-500" />
+                <span className="w-2 h-2 rounded-full bg-[#1E40AF]" />
                 <span>Basis: <strong className="text-slate-900 font-bold">78.181 Pesanan Olist</strong></span>
               </div>
             </div>
@@ -93,29 +93,29 @@ export default function HomePage() {
 
         </section>
 
-        {/* 2. Interactive Live Quick Simulator (Eksperimen Langsung Parameter) */}
+        {/* 2. Interactive Live Quick Simulator (Card Semi-Transparan Bersih) */}
         <section className="flex flex-col gap-4">
           <QuickSimulator />
         </section>
 
-        {/* 3. Verified Model Metrics Bar */}
+        {/* 3. Verified Model Metrics Bar (Semi-Transparent Acrylic Cards) */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-          <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Basis Data Teruji</span>
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">78.181</span>
             <span className="text-xs text-slate-500 mt-0.5 block">Transaksi Riil E-Commerce</span>
           </div>
-          <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Akurasi Tarif Kurir</span>
             <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">R² 73.49%</span>
             <span className="text-xs text-slate-500 mt-0.5 block">HistGradientBoosting Regresi</span>
           </div>
-          <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Deteksi Risiko Margin</span>
             <span className="text-2xl sm:text-3xl font-extrabold text-[#1E40AF] mt-1.5 block">F1 85.94%</span>
             <span className="text-xs text-slate-500 mt-0.5 block">Precision 88.9% • Recall 83.1%</span>
           </div>
-          <div className="p-5 rounded-2xl bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-xs text-left hover:border-[#1E40AF]/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs text-left hover:border-[#1E40AF]/40 hover:bg-white/90 transition-all">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mata Uang Acuan</span>
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1.5 block">BRL (R$)</span>
             <span className="text-xs text-slate-500 mt-0.5 block">Real Brasil (Olist Dataset)</span>
@@ -153,10 +153,10 @@ export default function HomePage() {
         </section>
 
         {/* 6. Batasan Cakupan Sistem (Transparan & Anti-Blackbox) */}
-        <section className="p-7 sm:p-9 rounded-3xl bg-slate-100/90 backdrop-blur-xs border border-slate-200/90">
+        <section className="p-7 sm:p-9 rounded-3xl bg-white/75 backdrop-blur-md border border-slate-200/80 shadow-xs">
           <div className="flex items-start gap-4">
-            <div className="p-2.5 rounded-xl bg-slate-200 text-slate-700 shrink-0 mt-0.5">
-              <Info className="w-5 h-5" />
+            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0 mt-0.5">
+              <Info className="w-5 h-5 text-slate-600" />
             </div>
             <div className="flex flex-col gap-2.5 w-full">
               <h3 className="text-lg font-bold text-slate-900">
@@ -166,8 +166,8 @@ export default function HomePage() {
                 Sistem ini dirancang dengan parameter yang jelas berdasarkan data faktual transaksi tanpa klaim berlebihan:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-                  <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-xs">
+                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-[#1E40AF]" />
                     CAKUPAN DETEKSI TERUJI:
                   </span>
@@ -178,8 +178,8 @@ export default function HomePage() {
                   </ul>
                 </div>
 
-                <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-xs">
+                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-slate-500" />
                     DI LUAR CAKUPAN SISTEM:
                   </span>
@@ -209,8 +209,8 @@ export default function HomePage() {
           <InteractiveFAQ />
         </section>
 
-        {/* 8. Footer Call to Action Banner */}
-        <section className="text-center py-12 px-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
+        {/* 8. Footer Call to Action Banner (Clean Slate Backdrop) */}
+        <section className="text-center py-12 px-6 rounded-3xl bg-slate-900/90 backdrop-blur-lg text-white border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#1E40AF]/20 rounded-full blur-3xl pointer-events-none" />
           
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight relative z-10">

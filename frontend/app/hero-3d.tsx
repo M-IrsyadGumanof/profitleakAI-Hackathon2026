@@ -1,10 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 export function Hero3D() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScrollState = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 30);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    handleScrollState();
+    window.addEventListener("scroll", handleScrollState, { passive: true });
+    return () => window.removeEventListener("scroll", handleScrollState);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -325,9 +343,19 @@ export function Hero3D() {
   return (
     // Sticky Background Penuh yang tidak bergeser saat di-scroll
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+      {/* 3D WebGL Canvas */}
       <div
         ref={containerRef}
         className="w-full h-full pointer-events-auto cursor-grab active:cursor-grabbing"
+      />
+
+      {/* Dynamic Background Blur Overlay saat di-scroll (Clean saat di atas, blur saat scroll) */}
+      <div
+        className={`absolute inset-0 pointer-events-none transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isScrolled
+            ? "backdrop-blur-md bg-slate-50/50"
+            : "backdrop-blur-none bg-transparent"
+        }`}
       />
     </div>
   );
