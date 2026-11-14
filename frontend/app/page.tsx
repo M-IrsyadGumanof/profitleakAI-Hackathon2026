@@ -40,7 +40,7 @@ export default function HomePage() {
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.08]">
               Hentikan Kebocoran Margin Logistik E-Commerce dengan{" "}
               <span className="bg-gradient-to-r from-[#1E40AF] via-[#1E3A8A] to-[#38BDF8] bg-clip-text text-transparent">
-                Dual-Detector AI
+                ProfitLeak AI
               </span>
             </h1>
 
