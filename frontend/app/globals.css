@@ -147,3 +147,51 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 }
+
+/* ==========================================================================
+   STYLING CETAK DOKUMEN / UNDUH LAPORAN PDF
+   ========================================================================== */
+@media print {
+  /* Sembunyikan navigasi, tombol, widget copilot, dan elemen non-cetak */
+  header,
+  nav,
+  .no-print,
+  button,
+  input,
+  [data-copilot-widget="true"],
+  .fixed {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+
+  /* Tampilkan elemen khusus cetak */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Hilangkan bayangan berlebih agar cetakan jernih di kertas/PDF */
+  .shadow-xs,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Hindari pemotongan tabel di tengah baris */
+  tr {
+    page-break-inside: avoid;
+  }
+}
+
+.print-only {
+  display: none;
+}
+

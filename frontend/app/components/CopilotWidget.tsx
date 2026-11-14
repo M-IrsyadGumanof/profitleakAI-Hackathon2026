@@ -133,7 +133,7 @@ export function CopilotWidget({ summary, rows, filename }: CopilotWidgetProps) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div data-copilot-widget="true" className="no-print fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Floating Chat Modal */}
       {isOpen && (
         <div className="w-[360px] sm:w-[420px] h-[550px] max-h-[85vh] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">

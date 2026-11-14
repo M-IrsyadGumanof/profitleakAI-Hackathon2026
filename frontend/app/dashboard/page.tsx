@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AdvicePanel } from "../components/AdvicePanel";
 import { CopilotWidget } from "../components/CopilotWidget";
 import { getAdvice } from "../lib/api";
@@ -13,15 +14,15 @@ import {
   CheckCircle2, 
   Download, 
   FileSpreadsheet, 
-  Filter, 
-  Info, 
   Layers, 
-  RefreshCw, 
   Search, 
   ShieldAlert, 
   Sliders, 
   TrendingDown, 
-  Truck 
+  Truck,
+  Lock,
+  UploadCloud,
+  X
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -297,26 +298,6 @@ const SIMULATOR_PRESETS = [
 
 type AnalysisData = typeof DEFAULT_ANALYSIS_DATA;
 
-// Baca hasil analisis terakhir dari sessionStorage. Hanya hasil upload yang
-// valid yang dipakai; selain itu tampilkan data contoh + peringatan.
-function readStoredAnalysis(): { data: AnalysisData; hasStoredResult: boolean } {
-  if (typeof window === "undefined") {
-    return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
-  }
-  try {
-    const stored = sessionStorage.getItem("profitleak_analysis_result");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed && parsed.summary && Array.isArray(parsed.rows)) {
-        return { data: parsed as AnalysisData, hasStoredResult: true };
-      }
-    }
-  } catch {
-    // rusak / tidak dapat diparse -> fallback ke data contoh
-  }
-  return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
-}
-
 function readStoredAdvice(filename?: string): AdviceResponse | null {
   if (typeof window === "undefined") return null;
   try {
@@ -336,10 +317,88 @@ function readStoredAdvice(filename?: string): AdviceResponse | null {
   return null;
 }
 
+function subscribeSession(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("profitleak-session-update", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("profitleak-session-update", callback);
+  };
+}
+
+function getSessionSnapshot(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem("profitleak_analysis_result");
+}
+
+function getServerSnapshot(): string | null {
+  return null;
+}
+
 export default function DashboardPage() {
-  const [initial] = useState(readStoredAnalysis);
-  const [data] = useState<AnalysisData>(initial.data);
-  const hasStoredResult = initial.hasStoredResult;
+  const router = useRouter();
+  const rawStored = useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSnapshot);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  const storedAnalysis = useMemo(() => {
+    if (!rawStored) {
+      return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
+    }
+    try {
+      const parsed = JSON.parse(rawStored);
+      if (parsed && parsed.summary && Array.isArray(parsed.rows)) {
+        return { data: parsed as AnalysisData, hasStoredResult: true };
+      }
+    } catch {}
+    return { data: DEFAULT_ANALYSIS_DATA, hasStoredResult: false };
+  }, [rawStored]);
+
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [pendingExitUrl, setPendingExitUrl] = useState<string | null>(null);
+
+  const data = storedAnalysis.data;
+  const hasStoredResult = storedAnalysis.hasStoredResult;
+
+  // Listener untuk download PDF dan request exit dari Navbar
+  useEffect(() => {
+    const handleDownload = () => {
+      window.print();
+    };
+    const handleExitRequest = (e: Event) => {
+      const ce = e as CustomEvent<{ href: string }>;
+      setPendingExitUrl(ce.detail?.href || "/upload");
+      setShowExitModal(true);
+    };
+
+    window.addEventListener("trigger-download-pdf", handleDownload);
+    window.addEventListener("request-exit-dashboard", handleExitRequest);
+    return () => {
+      window.removeEventListener("trigger-download-pdf", handleDownload);
+      window.removeEventListener("request-exit-dashboard", handleExitRequest);
+    };
+  }, []);
+
+  const handleRequestExit = (url: string = "/upload") => {
+    setPendingExitUrl(url);
+    setShowExitModal(true);
+  };
+
+  const handleConfirmExit = () => {
+    try {
+      sessionStorage.removeItem("profitleak_analysis_result");
+      sessionStorage.removeItem("profitleak_advice");
+      sessionStorage.removeItem("profitleak_advice_filename");
+      window.dispatchEvent(new Event("profitleak-session-update"));
+    } catch {}
+    setShowExitModal(false);
+    const target = pendingExitUrl || "/upload";
+    router.push(target);
+  };
+
   const [activeTab, setActiveTab] = useState<"overview" | "table" | "simulator">("overview");
   const [statusFilter, setStatusFilter] = useState<"all" | "leaks" | "normal">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -429,8 +488,8 @@ export default function DashboardPage() {
   };
 
   // State Rekomendasi Saran AI (Google Gemini LLM / Rule-Based Fallback)
-  // Diinisialisasi langsung dari sessionStorage sesuai nama file aktif
-  const [advice, setAdvice] = useState<AdviceResponse | null>(() => readStoredAdvice(data.filename));
+  const [adviceOverride, setAdviceOverride] = useState<AdviceResponse | null>(null);
+  const advice = adviceOverride ?? (hasStoredResult ? readStoredAdvice(data.filename) : null);
   const [adviceLoading, setAdviceLoading] = useState<boolean>(false);
   const [adviceError, setAdviceError] = useState<string | null>(null);
 
@@ -464,7 +523,7 @@ export default function DashboardPage() {
       };
 
       const result = await getAdvice(payload);
-      setAdvice(result);
+      setAdviceOverride(result);
       try {
         sessionStorage.setItem("profitleak_advice", JSON.stringify(result));
         sessionStorage.setItem("profitleak_advice_filename", data.filename || "transaksi.csv");
@@ -479,39 +538,82 @@ export default function DashboardPage() {
     }
   };
 
-  return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col gap-6">
-      {/* Peringatan: dashboard menampilkan data contoh, bukan hasil upload */}
-      {hasStoredResult === false && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
-          <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm">
-            <span className="font-bold block">Belum ada hasil analisis</span>
-            <span>
-              Data di bawah adalah <strong>contoh (demo)</strong>, bukan hasil upload Anda.
-              Silakan unggah file CSV terlebih dahulu.
-            </span>
+  if (!isHydrated) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs text-slate-500 font-medium">Memuat data analisis...</span>
+      </div>
+    );
+  }
+
+  if (!hasStoredResult) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/50 p-8 text-center flex flex-col items-center animate-in fade-in-50 zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center mb-5 shadow-xs">
+            <Lock className="w-8 h-8" strokeWidth={2.2} />
           </div>
+
+          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/70 px-3 py-1 rounded-full mb-3">
+            Dashboard Belum Terbuka
+          </span>
+
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
+            Belum Ada Data Transaksi
+          </h2>
+
+          <p className="text-xs text-slate-600 leading-relaxed mb-6">
+            Dashboard analisis memerlukan data transaksi pengiriman logistik untuk mendeteksi indikasi kebocoran margin dan menyajikan rekomendasi AI. Silakan unggah berkas CSV Anda terlebih dahulu.
+          </p>
+
           <Link
             href="/upload"
-            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 rounded-md transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[#1E40AF] hover:bg-[#1E3A8A] text-white font-semibold text-xs shadow-md shadow-blue-900/10 transition-all hover:scale-[1.02] active:scale-95"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            Unggah CSV
+            <UploadCloud className="w-4 h-4" />
+            <span>Unggah Berkas CSV Sekarang</span>
           </Link>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col gap-6">
+      {/* Header Khusus Saat Dokumen Dicetak / Disimpan sebagai PDF */}
+      <div className="print-only mb-6 pb-4 border-b-2 border-slate-900">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase font-extrabold tracking-widest text-blue-800">
+              ProfitLeak • AI Logistics Audit Engine
+            </div>
+            <h1 className="text-xl font-black text-slate-900 mt-1">
+              LAPORAN AUDIT KEBOCORAN LABA & ANOMALI ONGKOS KIRIM
+            </h1>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Hasil evaluasi dual-engine detector (Fair Rate Regression & Margin Risk Classifier)
+            </p>
+          </div>
+          <div className="text-right text-xs text-slate-600">
+            <div><span className="font-semibold text-slate-800">Berkas Data:</span> {data.filename}</div>
+            <div><span className="font-semibold text-slate-800">Total Transaksi:</span> {data.summary.analysed} baris</div>
+            <div><span className="font-semibold text-slate-800">Kebocoran:</span> {data.summary.leaks} ({data.summary.leak_rate}%)</div>
+          </div>
+        </div>
+      </div>
 
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200 no-print">
         <div className="flex items-center gap-3">
-          <Link
-            href="/upload"
-            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-            title="Unggah File Baru"
+          <button
+            type="button"
+            onClick={() => handleRequestExit("/upload")}
+            className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            title="Kembali & Unggah File Baru"
           >
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -527,14 +629,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href="/upload"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors"
+        <div className="flex items-center gap-2.5">
+          {/* Tombol Unduh Laporan PDF */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] rounded-lg shadow-xs transition-all active:scale-95 cursor-pointer"
+            title="Cetak atau Unduh Laporan Audit dalam format PDF"
+          >
+            <Download className="w-4 h-4" />
+            <span>Unduh Laporan PDF</span>
+          </button>
+
+          {/* Tombol Unggah File Baru dengan Konfirmasi Reset */}
+          <button
+            type="button"
+            onClick={() => handleRequestExit("/upload")}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg shadow-xs transition-colors cursor-pointer"
+            title="Keluar dari analisis ini dan unggah file CSV baru"
           >
             <FileSpreadsheet className="w-4 h-4 text-slate-500" />
-            Unggah File Baru
-          </Link>
+            <span>Unggah File Baru</span>
+          </button>
         </div>
       </div>
 
@@ -616,7 +732,7 @@ export default function DashboardPage() {
       />
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 gap-6">
+      <div className="flex border-b border-slate-200 gap-6 no-print">
         <button
           onClick={() => setActiveTab("overview")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
@@ -1130,6 +1246,52 @@ export default function DashboardPage() {
 
             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 text-center">
               Evaluasi berbasis model regresi tarif & klasifikasi margin
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Keluar dari Dashboard */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 no-print">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Keluar dari Hasil Analisis?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                  Jika Anda keluar dari menu analisis ini, data sesi audit saat ini akan direset. Anda perlu mengunggah file CSV kembali untuk mengakses dashboard.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExitModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer transition-colors"
+                aria-label="Tutup modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowExitModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Tetap di Dashboard
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmExit}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                Ya, Keluar & Reset Sesi
+              </button>
             </div>
           </div>
         </div>
