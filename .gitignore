@@ -41,3 +41,7 @@ dist/
 !requirements.txt
 !**/requirements.txt
 !pembagian_tim_5_orang.txt
+
+# Catatan kerja internal / pembagian tugas per fitur (tidak di-commit)
+pembagian_tugas_*.txt
+
