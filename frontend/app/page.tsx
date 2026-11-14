@@ -9,7 +9,6 @@ import {
   Sparkles,
   Sliders
 } from "lucide-react";
-import { Hero3D } from "./hero-3d";
 import { QuickSimulator } from "./quick-simulator";
 import { InteractiveDetectorTabs } from "./components/interactive-detector-tabs";
 import { InteractiveWorkflow } from "./components/interactive-workflow";
@@ -21,11 +20,11 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       
-      {/* Konten Halaman */}
-      <div className="relative z-10 flex flex-col gap-24 sm:gap-32 py-6 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* Konten Halaman: padding atas diperketat agar pas dengan floating navbar */}
+      <div className="relative z-10 flex flex-col gap-24 sm:gap-32 pt-2 sm:pt-4 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         
-        {/* 1. Hero Section (Konten Kiri + Elemen 3D Mandiri di Sisi Kanan) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center pt-2 sm:pt-6 min-h-[75vh]">
+        {/* 1. Hero Section (Konten Kiri + Viewport Elemen 3D di Kanan) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center pt-2 sm:pt-4 min-h-[72vh]">
           
           {/* Kolom Kiri: Headline, Subtitle, CTA & Telemetri Ringkas (Col 7) */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
@@ -86,9 +85,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Kolom Kanan: Model 3D Hero Mandiri di Samping Judul Besar (Tetap di atas saat discroll) */}
-          <div className="lg:col-span-5 h-[380px] sm:h-[460px] lg:h-[520px] w-full relative flex items-center justify-center">
-            <Hero3D />
+          {/* Kolom Kanan: Area Terbuka untuk Elemen 3D Persisten (Berdampingan dengan Judul Besar) */}
+          <div className="lg:col-span-5 min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] w-full relative pointer-events-none flex items-center justify-center">
+            {/* Elemen 3D persisten dari Global3DScene ditampilkan di sini secara presisi */}
           </div>
 
         </section>
