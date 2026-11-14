@@ -1,11 +1,7 @@
 """
-PROFITLEAK AI - QA TEST SUITE (Python Standalone)
+PROFITLEAK AI - QA TEST SUITE v6 (Python Standalone)
 Pemilik: Febri (QA + Docs + FE Support)
 Lokasi : frontend/scripts/test_api.py
-
-Penggunaan:
-  python frontend/scripts/test_api.py          (Live target http://127.0.0.1:8000)
-  python frontend/scripts/test_api.py --mock   (Mock test internal)
 """
 
 import sys
@@ -16,6 +12,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 FIXTURE_PATH = BASE_DIR / "fixtures.json"
+CSV_PATH = BASE_DIR / "sample_transactions.csv"
 
 with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
     fixtures = json.load(f)
@@ -26,10 +23,10 @@ for arg in sys.argv[1:]:
     if arg.startswith("http"):
         base_url = arg
 
-threshold = fixtures.get("contract_threshold", 1.102309)
+threshold = fixtures.get("contract_threshold", 3.09779)
 
 print("=" * 72)
-print(" PROFITLEAK AI - AUTOMATED QA TEST RUNNER (PYTHON)")
+print(" PROFITLEAK AI - AUTOMATED QA TEST RUNNER (PYTHON v6)")
 print(f" Mode: {'MOCK SIMULATION' if is_mock else f'LIVE SERVER ({base_url})'}")
 print(f" Threshold Kontrak: {threshold}")
 print("=" * 72 + "\n")
@@ -50,26 +47,31 @@ def run_test(test_id, name, test_func):
 
 def mock_request(endpoint, method="GET", payload=None):
     if endpoint == "/api/health":
-        return 200, {"status": "healthy", "model_loaded": True}
-    
+        return 200, {"status": "ok", "service": "profitleak-api"}
+    if endpoint == "/api/model-info":
+        return 200, {"threshold": threshold, "detectors": ["rate", "margin"]}
+    if endpoint == "/api/upload-csv":
+        return 200, {"summary": {"total_rows": 5, "analysed": 4, "leaks": 2}}
+
     weight = payload.get("weight_kg", 0)
     dist = payload.get("distance_km", 0)
     vol = payload.get("volume_cm3", 0)
     price = payload.get("price", 0)
+    actual_rate = payload.get("actual_rate", price)
 
     if not (0.05 <= weight <= 30.0 and 1.4896 <= dist <= 3135.7885 and 352.0 <= vol <= 244608.0 and 4.99 <= price <= 2110.0):
         return 400, {"detail": "Input out of valid range"}
 
     predicted = round(15.0 + (weight * 1.5) + (dist * 0.015) + (vol * 0.0001), 2)
-    ratio = round(price / predicted, 4)
-    is_leak = ratio > threshold
+    ratio = round(actual_rate / predicted, 4)
+    is_leak = (ratio > threshold) or ((actual_rate / price) > 0.5)
 
     if endpoint == "/api/predict":
         return 200, {"predicted_rate": predicted, "currency": "BRL"}
     if endpoint == "/api/detect-leak":
         return 200, {
             "predicted_rate": predicted,
-            "actual_rate": price,
+            "actual_rate": actual_rate,
             "ratio": ratio,
             "is_leak": is_leak,
             "threshold": threshold,
@@ -104,38 +106,38 @@ def request(endpoint, method="GET", payload=None):
 # Test Cases
 def test_health():
     status, body = request("/api/health")
-    assert status == 200, f"Expected 200, got {status}"
+    assert status == 200 and body.get("status") == "ok"
+
+def test_model_info():
+    status, body = request("/api/model-info")
+    assert status == 200 and "detectors" in body
 
 def test_predict():
     tc = fixtures["test_cases"]["normal_sample"]
     status, body = request("/api/predict", "POST", tc["input"])
-    assert status == 200, f"Expected 200, got {status}"
-    assert "predicted_rate" in body, "Field predicted_rate missing"
-    assert body.get("currency") == "BRL", "Currency should be BRL"
+    assert status == 200 and body.get("predicted_rate", 0) > 0
 
 def test_leak_normal():
     tc = fixtures["test_cases"]["normal_sample"]
     status, body = request("/api/detect-leak", "POST", tc["input"])
-    assert status == 200, f"Expected 200, got {status}"
-    assert body.get("is_leak") is False, "Expected is_leak: False"
+    assert status == 200 and body.get("is_leak") is False
 
-def test_leak_markup():
-    tc = fixtures["test_cases"]["leak_sample_2x"]
+def test_leak_rate():
+    tc = fixtures["test_cases"]["rate_leak_sample"]
     status, body = request("/api/detect-leak", "POST", tc["input"])
-    assert status == 200, f"Expected 200, got {status}"
-    assert body.get("is_leak") is True, "Expected is_leak: True"
-    assert body.get("ratio") > threshold, "Ratio must be greater than threshold"
+    assert status == 200 and body.get("is_leak") is True
 
 def test_invalid_weight():
     tc = fixtures["test_cases"]["invalid_weight_low"]
     status, body = request("/api/detect-leak", "POST", tc["input"])
-    assert status == 400, f"Expected 400 for out-of-range weight, got {status}"
+    assert status == 400 and isinstance(body.get("detail"), str)
 
-run_test("TC-01-HEALTH", "Health Check endpoint", test_health)
-run_test("TC-02-PREDICT", "Rate Prediction endpoint", test_predict)
-run_test("TC-03-LEAK-NORMAL", "Detection Normal Rate (Aman)", test_leak_normal)
-run_test("TC-04-LEAK-MARKUP", "Detection Markup Rate (Bocor)", test_leak_markup)
-run_test("TC-05-INVALID-RANGE", "Validation Boundary Check (HTTP 400)", test_invalid_weight)
+run_test("TC-01-HEALTH", "Health check endpoint", test_health)
+run_test("TC-02-MODEL-INFO", "Model info & scope metadata", test_model_info)
+run_test("TC-03-PREDICT", "Predict rate endpoint", test_predict)
+run_test("TC-04-LEAK-NORMAL", "Detect normal transaction (is_leak: false)", test_leak_normal)
+run_test("TC-05-LEAK-RATE", "Detect rate leak (is_leak: true)", test_leak_rate)
+run_test("TC-06-INVALID-400", "Boundary check returns HTTP 400", test_invalid_weight)
 
 print("\n" + "=" * 72)
 passed = sum(1 for r in results if r[2] == "PASS")

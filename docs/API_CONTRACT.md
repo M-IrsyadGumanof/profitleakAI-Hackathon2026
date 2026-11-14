@@ -1,126 +1,172 @@
-# 📄 Kontrak Data & Spesifikasi API — ProfitLeak AI
+# 📄 Kontrak Data & Spesifikasi API v6 — ProfitLeak AI
 
 > **Disusun oleh:** Irsyad (Backend Engineer) & Galang (ML Engineer)  
-> **Didokumentasikan & Divalidasi oleh:** Febri (QA & Docs Engineer)  
-> **Versi Model:** `profitleak_final_model_v5.pkl` / `v5`
+> **Didokumentasikan & Diverifikasi oleh:** Febri (QA & Docs Engineer)  
+> **Versi Backend/Model:** `v6` (Multi-Detector: Rate + Margin)  
+> **Base URL Lokal:** `http://localhost:8000`
 
 ---
 
-## 1. Ringkasan Eksekutif
+## 1. Ringkasan Eksekutif & Cakupan Model (*Scope*)
 
-ProfitLeak AI mendeteksi anomali penetapan harga ongkir (*shipping rate*) yang berpotensi merugikan margin bisnis (*profit leak*).
-Model inferensi memprediksi tarif wajar berdasarkan 4 fitur fisik pengiriman, membandingkannya dengan tarif aktual yang ditagihkan (`actual_rate`), dan menandai kebocoran jika rasio melebihi ambang batas (*threshold*).
+ProfitLeak AI mendeteksi **transaksi tidak ekonomis** dengan menggabungkan dua detektor:
+1. **Detektor Tarif (`rate`):** Menandai jika rasio tarif aktual terhadap tarif wajar $> \mathbf{3.09779}$.
+2. **Detektor Margin (`margin`):** Memprediksi apakah ongkir menyerap porsi besar dari harga jual ($\text{freight} / \text{price} > 0.5$, threshold probabilitas $\ge \mathbf{0.46}$).
 
-* **Threshold Kebocoran:** `1.102309` (Quantile 0.998)
-* **Baseline Median Residual:** `-0.011977`
-* **Mata Uang:** `BRL` (Brazilian Real - R$)
-* **Base URL Default:** `http://localhost:8000`
+> ⚠️ **Batasan Cakupan Model (Scope Honesty):**
+> * **Tercakup:** Anomali tarif ongkir aktual & rasio ongkir terhadap harga jual.
+> * **TIDAK Tercakup:** Harga modal / COGS / HPP, diskon / voucher / promo, margin laba bersih murni (karena dataset Olist tidak memuat kolom tersebut).
 
 ---
 
 ## 2. Batas Validasi Input (`valid_ranges`)
 
-Semua endpoint yang menerima payload pengiriman **WAJIB** memvalidasi input terhadap rentang berikut. Input di luar batas harus ditolak dengan status HTTP **400 Bad Request**.
+Input numerik diverifikasi terhadap rentang berikut. Pelanggaran batas ditolak dengan status **HTTP 400 Bad Request** dengan format `{"detail": "<pesan ramah>"}`:
 
-| Parameter | Tipe Data | Nilai Min | Nilai Max | Satuan | Deskripsi |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `weight_kg` | `float` | `0.05` | `30.0` | Kilogram (kg) | Berat total barang |
-| `distance_km` | `float` | `1.4896` | `3135.7885` | Kilometer (km) | Jarak pengiriman |
-| `volume_cm3` | `float` | `352.0` | `244608.0` | cm³ | Volume kubikasi paket |
-| `price` | `float` | `4.99` | `2110.0` | BRL (R$) | Tarif ongkir aktual yang ditagihkan |
+| Parameter | Tipe | Min | Max | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| `weight_kg` | `float` | `0.05` | `30.0` | Berat paket (kg) |
+| `distance_km` | `float` | `1.4896` | `3135.7885` | Jarak rute pengiriman (km) |
+| `volume_cm3` | `float` | `352.0` | `244608.0` | Volume kubikasi paket (cm³) |
+| `price` | `float` | `4.99` | `2110.0` | Harga barang (BRL) |
 
-> *Catatan Teknis:* Fitur `price_log` dihitung secara internal oleh backend (`np.log(price)`), **TIDAK** dikirim oleh klien frontend.
+*Field Opsional:* `product_weight_g` (gram), `length_cm`, `height_cm`, `width_cm`, dan `actual_rate` (ongkir aktual).
 
 ---
 
 ## 3. Spesifikasi Endpoint
 
 ### A. Health Check
-* **Method:** `GET`
-* **Path:** `/api/health`
-* **Deskripsi:** Memeriksa kesiapan server dan status model machine learning yang telah di-*load*.
+* **Method:** `GET` | **Path:** `/api/health`
 * **Response (HTTP 200 OK):**
 ```json
 {
-  "status": "healthy",
-  "model_loaded": true,
-  "version": "v5"
+  "status": "ok",
+  "service": "profitleak-api",
+  "version": "0.2.0"
 }
 ```
 
 ---
 
-### B. Prediksi Tarif Ongkir
-* **Method:** `POST`
-* **Path:** `/api/predict`
-* **Deskripsi:** Mengembalikan estimasi tarif ongkir wajar berdasarkan fitur fisik.
-* **Request Body:**
+### B. Metadata Model & Scope
+* **Method:** `GET` | **Path:** `/api/model-info`
+* **Response (HTTP 200 OK):**
+```json
+{
+  "threshold": 3.09779,
+  "margin_threshold": 0.5,
+  "margin_proba_threshold": 0.46,
+  "detectors": ["rate", "margin"],
+  "scope": {
+    "covered": ["tarif ongkir aktual jauh di atas tarif wajar", "ongkir menyerap porsi besar dari harga jual"],
+    "not_covered": ["harga modal / COGS / HPP", "diskon", "margin keuntungan bersih"]
+  }
+}
+```
+
+---
+
+### C. Prediksi Tarif Wajar
+* **Method:** `POST` | **Path:** `/api/predict`
+* **Request:**
 ```json
 {
   "weight_kg": 1.5,
   "distance_km": 150.0,
   "volume_cm3": 5000.0,
-  "price": 20.0
+  "price": 100.0
 }
 ```
 * **Response (HTTP 200 OK):**
 ```json
 {
-  "predicted_rate": 18.45,
+  "predicted_rate": 20.45,
   "currency": "BRL"
 }
 ```
 
 ---
 
-### C. Deteksi Kebocoran Profit (Profit Leak Detection)
-* **Method:** `POST`
-* **Path:** `/api/detect-leak`
-* **Deskripsi:** Menghitung prediksi, membandingkan dengan tarif aktual, dan mengevaluasi indikasi kebocoran profit.
-* **Request Body:**
+### D. Deteksi Kebocoran Transaksi (Single)
+* **Method:** `POST` | **Path:** `/api/detect-leak`
+* **Request:**
 ```json
 {
-  "weight_kg": 1.5,
-  "distance_km": 150.0,
-  "volume_cm3": 5000.0,
-  "price": 55.0
+  "weight_kg": 5.0,
+  "distance_km": 1000.0,
+  "volume_cm3": 20000.0,
+  "price": 30.0,
+  "actual_rate": 35.0
 }
 ```
 * **Response (HTTP 200 OK):**
 ```json
 {
-  "predicted_rate": 18.45,
-  "actual_rate": 55.0,
-  "ratio": 2.981,
+  "predicted_rate": 32.75,
+  "actual_rate": 35.0,
+  "ratio": 1.0687,
+  "freight_ratio": 1.1667,
+  "margin_risk_probability": 0.94,
   "is_leak": true,
-  "threshold": 1.102309,
+  "threshold": 3.09779,
   "currency": "BRL",
-  "message": "Tarif aktual 198.1% di atas tarif wajar model. Terindikasi kebocoran profit signifikan!"
+  "message": "Terindikasi kebocoran profit: ongkir menyerap porsi harga jual terlalu besar",
+  "risk_score": 0.82,
+  "detectors": {
+    "rate": false,
+    "margin": true
+  },
+  "reasons": [
+    {
+      "code": "freight_eats_margin",
+      "severity": "high",
+      "detail": "Model memprediksi risiko margin 94.0%. Ongkir aktual menyerap 116.7% dari harga jual.",
+      "remedy": "Naikkan harga jual, gabungkan pengiriman, atau terapkan minimum order."
+    }
+  ]
 }
 ```
 
 ---
 
-### D. Format Respons Error
-* **Status HTTP:** `400 Bad Request` (input di luar rentang valid) atau `500 Internal Server Error`
-* **Response Body:**
+### E. Analisis Transaksi Batch via CSV
+* **Method:** `POST` | **Path:** `/api/upload-csv`
+* **Content-Type:** `multipart/form-data` (Field name: `file`)
+* **Format:** File `.csv` UTF-8 (maksimal 50.000 baris).
+* **Kolom Wajib:** `weight_kg`, `distance_km`, `volume_cm3`, `price`.
+* **Kolom Opsional:** `freight_value` atau `actual_rate`.
+* **Response (HTTP 200 OK):**
 ```json
 {
-  "detail": "Nilai weight_kg (35.0) melebihi batas maksimum 30.0 kg."
+  "filename": "transaksi.csv",
+  "currency": "BRL",
+  "threshold": 3.09779,
+  "margin_threshold": 0.5,
+  "summary": {
+    "total_rows": 500,
+    "analysed": 498,
+    "skipped": 2,
+    "leaks": 64,
+    "rate_leaks": 12,
+    "margin_risks": 58,
+    "estimated_loss": 3450.80,
+    "leak_rate": 12.85
+  },
+  "reason_breakdown": {
+    "freight_eats_margin": 58,
+    "rate_exceeds_fair": 12
+  },
+  "recommendations": [
+    {
+      "code": "freight_eats_margin",
+      "count": 58,
+      "recommendation": "Terapkan batas minimum order atau bundel paket pada produk bernilai kecil."
+    }
+  ],
+  "rows": [ /* daftar hasil per baris */ ],
+  "skipped": [
+    { "line": 42, "reason": "weight_kg=99.0 di luar rentang valid (0.05 - 30.0 kg)" }
+  ]
 }
-```
-
----
-
-## 4. Logika Keputusan Deteksi
-
-```
-ratio = actual_rate / predicted_rate
-
-IF ratio > 1.102309 THEN:
-    is_leak = true
-    status  = "Terindikasi Kebocoran Profit"
-ELSE:
-    is_leak = false
-    status  = "Tarif Wajar / Normal"
 ```

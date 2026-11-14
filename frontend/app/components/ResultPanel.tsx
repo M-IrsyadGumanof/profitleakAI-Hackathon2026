@@ -1,6 +1,7 @@
 import * as React from "react";
 import { StatusBadge } from "./StatusBadge";
 import { GaugeChart } from "./GaugeChart";
+import { ReasonList, ReasonItem } from "./ReasonList";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./Card";
 import { TrendingUp, DollarSign, Activity, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 
@@ -12,6 +13,11 @@ export interface DetectionResult {
   threshold?: number;
   currency: string;
   message?: string;
+  risk_score?: number;
+  freight_ratio?: number;
+  margin_risk_probability?: number;
+  detectors?: { rate?: boolean; margin?: boolean };
+  reasons?: ReasonItem[];
 }
 
 export interface ResultPanelProps {
@@ -68,7 +74,7 @@ export function ResultPanel({
 
   const currencySymbol = result.currency === "BRL" ? "R$" : result.currency;
   const actualRate = typeof result.actual_rate === "number" ? result.actual_rate : result.predicted_rate;
-  const threshold = typeof result.threshold === "number" ? result.threshold : 1.102309;
+  const threshold = typeof result.threshold === "number" ? result.threshold : 3.09779;
   const ratio = typeof result.ratio === "number" ? result.ratio : (actualRate / result.predicted_rate);
   const isLeak = typeof result.is_leak === "boolean" ? result.is_leak : (ratio > threshold);
   const difference = actualRate - result.predicted_rate;
@@ -80,9 +86,9 @@ export function ResultPanel({
       <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/80">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <CardTitle>Hasil Analisis Kebocoran Profit</CardTitle>
+            <CardTitle>Hasil Analisis Transaksi</CardTitle>
             <CardDescription>
-              Evaluasi tarif ongkir berdasarkan model HistGradientBoosting v5
+              Evaluasi tarif ongkir & risiko margin berdasarkan model HistGradientBoosting v6
             </CardDescription>
           </div>
           <StatusBadge
@@ -142,7 +148,7 @@ export function ResultPanel({
             <p className={`mt-1 text-[11px] font-medium ${
               isLeak ? "text-rose-600/80 dark:text-rose-400/80" : "text-emerald-600/80 dark:text-emerald-400/80"
             }`}>
-              {isLeak ? `${percentageDiff}% di atas batas wajar` : `Dalam batas wajar (${percentageDiff}%)`}
+              {isLeak ? `${percentageDiff}% di atas tarif wajar` : `Dalam batas wajar (${percentageDiff}%)`}
             </p>
           </div>
         </div>
@@ -166,6 +172,16 @@ export function ResultPanel({
             <span>{message}</span>
           </div>
         </div>
+
+        {/* Reasons List v6 */}
+        {result.reasons && result.reasons.length > 0 && (
+          <div className="space-y-2 border-t border-zinc-100 pt-5 dark:border-zinc-800/80">
+            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Rincian Faktor Penyebab & Solusi:
+            </h5>
+            <ReasonList reasons={result.reasons} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
