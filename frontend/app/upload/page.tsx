@@ -358,14 +358,14 @@ export default function UploadPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
           isDragging
-            ? "border-blue-500 bg-blue-50/50 scale-[1.005]"
+            ? "border-cyan-400 shadow-xl shadow-cyan-500/20 scale-[1.005]"
             : file
-            ? "border-emerald-300 bg-emerald-50/20"
-            : "border-slate-300 hover:border-slate-400 bg-white"
+            ? "border-emerald-400/80 shadow-lg shadow-emerald-500/10"
+            : "border-slate-700/80 hover:border-cyan-400/80 shadow-lg shadow-slate-900/10"
         }`}
       >
-        {/* Interactive Liquid Wave Effect (Netlify Style) */}
-        <LiquidCanvas />
+        {/* Interactive Netlify Aurora + Liquid Shader */}
+        <LiquidCanvas isDragging={isDragging} />
 
         <input
           ref={fileInputRef}
@@ -381,18 +381,20 @@ export default function UploadPage() {
 
         <div className="relative z-10 flex flex-col items-center justify-center gap-3">
           <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-              file ? "bg-emerald-100 text-emerald-600" : "bg-blue-50 text-blue-600"
+            className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
+              file
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-400/30"
+                : "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 shadow-inner"
             }`}
           >
             {file ? <CheckCircle2 className="w-7 h-7" /> : <UploadCloud className="w-7 h-7" />}
           </div>
 
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-white tracking-wide drop-shadow-sm">
               {file ? file.name : "Tarik & lepaskan file CSV Anda ke sini"}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-300 mt-1 drop-shadow-sm">
               {file
                 ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diproses`
                 : "atau klik untuk memilih file dari komputer Anda (Maksimal 50.000 baris)"}
@@ -402,9 +404,9 @@ export default function UploadPage() {
           {!file && (
             <button
               type="button"
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-lg border border-white/20 backdrop-blur-md transition-all shadow-sm"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4 text-cyan-300" />
               Pilih Dokumen CSV
             </button>
           )}
