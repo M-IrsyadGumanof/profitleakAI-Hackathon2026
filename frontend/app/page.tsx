@@ -12,10 +12,9 @@ import {
   CheckCircle2,
   BarChart3,
   RefreshCw,
-  Sliders,
+  SlidersHorizontal,
   ArrowRight,
   TrendingUp,
-  Sparkles,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -27,6 +26,22 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Rentang validasi model v5 dari dataset Olist
 const VALID_RANGES = {
@@ -44,8 +59,8 @@ const BASELINE_MEDIAN_RESIDUAL = -0.011977;
 const PRESET_SCENARIOS = [
   {
     id: "normal",
-    name: "Transaksi Normal",
-    badge: "Wajar",
+    name: "Normal",
+    badge: "Tarif Wajar",
     weight: 0.8,
     distance: 120,
     length: 20,
@@ -56,8 +71,8 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "leak-high",
-    name: "Kebocoran Ekstrem",
-    badge: "Bocor 5x",
+    name: "Bocor 5x",
+    badge: "Anomali",
     weight: 0.5,
     distance: 85,
     length: 15,
@@ -68,7 +83,7 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "heavy-valid",
-    name: "Kargo Berat Jauh",
+    name: "Kargo Berat",
     badge: "Wajar",
     weight: 15.0,
     distance: 1820,
@@ -80,7 +95,7 @@ const PRESET_SCENARIOS = [
   },
   {
     id: "leak-mild",
-    name: "Markup Logistik",
+    name: "Markup",
     badge: "Bocor Samar",
     weight: 2.2,
     distance: 280,
@@ -125,14 +140,14 @@ export default function ProfitLeakDashboard() {
     return Math.max(1, Math.round(lengthCm * widthCm * heightCm));
   }, [lengthCm, widthCm, heightCm]);
 
-  // Validasi batas input
+  // Validasi input
   const validationWarnings = useMemo(() => {
     const list: string[] = [];
     if (weightKg < VALID_RANGES.weight_kg.min || weightKg > VALID_RANGES.weight_kg.max) {
-      list.push(`Berat (${weightKg} kg) di luar rentang 0.05 - 30 kg`);
+      list.push(`Berat (${weightKg} kg) di luar rentang latih 0.05 - 30 kg`);
     }
     if (distanceKm < VALID_RANGES.distance_km.min || distanceKm > VALID_RANGES.distance_km.max) {
-      list.push(`Jarak (${distanceKm} km) di luar rentang 1.5 - 3.135 km`);
+      list.push(`Jarak (${distanceKm} km) di luar rentang latih 1.5 - 3.135 km`);
     }
     if (volumeCm3 < VALID_RANGES.volume_cm3.min || volumeCm3 > VALID_RANGES.volume_cm3.max) {
       list.push(`Volume (${volumeCm3.toLocaleString()} cm³) di luar rentang data`);
@@ -254,7 +269,10 @@ export default function ProfitLeakDashboard() {
   }, []);
 
   // Pilih preset
-  const handleSelectPreset = (p: (typeof PRESET_SCENARIOS)[0]) => {
+  const handleSelectPreset = (presetId: string) => {
+    const p = PRESET_SCENARIOS.find((item) => item.id === presetId);
+    if (!p) return;
+
     setSelectedPreset(p.id);
     setWeightKg(p.weight);
     setDistanceKm(p.distance);
@@ -269,516 +287,516 @@ export default function ProfitLeakDashboard() {
     setResult(computed);
   };
 
-  // Data Chart: Aksen Biru Elegan & Merah/Netral
+  // Data Chart
   const chartData = useMemo(() => {
     if (!result) return [];
     return [
       {
         name: "Tarif Wajar (AI)",
         amount: result.predictedRate,
-        fill: "#3b82f6", // Electric Blue yang elegan
+        fill: "hsl(var(--foreground))",
       },
       {
         name: "Ongkir Ditagihkan",
         amount: result.actualRate,
-        fill: result.isLeak ? "#f43f5e" : "#64748b", // Rose-Red jika bocor, Muted Slate jika normal
+        fill: result.isLeak ? "hsl(var(--destructive))" : "hsl(var(--muted-foreground))",
       },
     ];
   }, [result]);
 
   return (
-    <div className="min-h-screen bg-[#080c16] text-slate-100 antialiased selection:bg-blue-500/20 selection:text-white">
-      {/* Subtle Background Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-blue-600/10 blur-[130px]" />
-      </div>
-
-      {/* Navbar Modern Beraksen Biru */}
-      <header className="border-b border-slate-800/80 bg-[#080c16]/85 backdrop-blur-md sticky top-0 z-40">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Header Minimalis shadcn */}
+      <header className="border-b bg-card/60 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-500/25">
-              <ShieldAlert className="h-4 w-4" />
+            <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-semibold text-xs">
+              PL
             </div>
-            <div>
+            <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight text-white">
-                  ProfitLeak <span className="text-blue-400 font-semibold">AI</span>
-                </span>
-                <span className="rounded border border-blue-500/30 bg-blue-950/60 px-1.5 py-0.2 text-[10px] font-medium text-blue-300">
-                  Model v5
-                </span>
+                <span className="text-sm font-semibold tracking-tight">ProfitLeak AI</span>
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-mono">
+                  v5.0
+                </Badge>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                Deteksi Anomali Biaya Pengiriman & Kebocoran Logistik
-              </p>
+              <span className="text-[11px] text-muted-foreground hidden sm:block">
+                Deteksi Anomali Tarif Pengiriman & Kebocoran Profit Logistik
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-mono text-[11px] text-slate-300">R²: 72.3% • FPR: 0.17%</span>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-mono text-[11px] font-normal">
+              R²: 72.3% • FPR: 0.17%
+            </Badge>
           </div>
         </div>
       </header>
 
-      {/* Konten Utama */}
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 space-y-4">
-        {/* Preset Selector Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2 backdrop-blur-sm">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 pl-1">
-            <Sliders className="h-3.5 w-3.5 text-blue-400" />
-            <span>Preset Skenario:</span>
+      {/* Main Container */}
+      <main className="mx-auto max-w-6xl flex-1 w-full px-4 py-6 sm:px-6 flex flex-col gap-6">
+        {/* Preset Selector menggunakan Tabs shadcn */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <SlidersHorizontal className="size-3.5" />
+            <span>Preset Skenario Pengujian:</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-            {PRESET_SCENARIOS.map((p) => {
-              const isActive = selectedPreset === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => handleSelectPreset(p)}
-                  className={`flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    isActive
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20"
-                      : "bg-slate-900/80 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800"
-                  }`}
-                >
-                  <span>{p.name}</span>
-                  <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
-                      isActive
-                        ? "bg-blue-900 text-blue-100"
-                        : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {p.badge}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <Tabs value={selectedPreset} onValueChange={handleSelectPreset} className="w-full sm:w-auto">
+            <TabsList className="grid grid-cols-4 w-full sm:w-auto h-8 p-1">
+              {PRESET_SCENARIOS.map((p) => (
+                <TabsTrigger key={p.id} value={p.id} className="text-xs px-3 h-6">
+                  {p.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* 2-Kolom Seimbang */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* KOLOM KIRI: Parameter Form (5 Kolom) */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0d1322]/90 p-5 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-white flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                Parameter Transaksi
-              </h2>
-              <span className="text-[10px] text-slate-400 font-mono">Fitur Model</span>
-            </div>
+        {/* 2-Column Balanced Dashboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* KOLOM KIRI: Form Input dengan Card shadcn */}
+          <Card className="lg:col-span-5 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold tracking-tight">
+                  Parameter Transaksi
+                </CardTitle>
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  Input Fitur
+                </Badge>
+              </div>
+              <CardDescription className="text-xs">
+                Masukkan spesifikasi fisik paket, rute pengiriman, dan biaya invoice.
+              </CardDescription>
+            </CardHeader>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 runAnalysis();
               }}
-              className="space-y-3.5"
             >
-              {/* Row 1: Berat & Jarak */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
-                    <label className="flex items-center gap-1">
-                      <Scale className="h-3 w-3 text-blue-400" />
-                      Berat (kg)
-                    </label>
-                    <span className="text-[10px] text-slate-400">0.05-30</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max="100"
-                      value={weightKg}
-                      onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                      required
-                    />
-                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400">kg</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
-                    <label className="flex items-center gap-1">
-                      <Navigation className="h-3 w-3 text-blue-400" />
-                      Jarak (km)
-                    </label>
-                    <span className="text-[10px] text-slate-400">1.5-3.135</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
-                      max="6000"
-                      value={distanceKm}
-                      onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                      required
-                    />
-                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400">km</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 2: Dimensi & Volume */}
-              <div>
-                <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
-                  <label className="flex items-center gap-1">
-                    <Maximize2 className="h-3 w-3 text-blue-400" />
-                    Dimensi (P × L × T cm)
-                  </label>
-                  <span className="text-white font-mono text-[10px] bg-slate-800 px-1.5 py-0.2 rounded border border-slate-700">
-                    {volumeCm3.toLocaleString()} cm³
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={lengthCm}
-                      onChange={(e) => setLengthCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-blue-500 focus:outline-none"
-                    />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">P</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={widthCm}
-                      onChange={(e) => setWidthCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-blue-500 focus:outline-none"
-                    />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">L</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={heightCm}
-                      onChange={(e) => setHeightCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-blue-500 focus:outline-none"
-                    />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">T</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 3: Harga Barang & Ongkir Ditagih */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
-                    <label className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-blue-400" />
-                      Harga Barang
-                    </label>
-                    <span className="text-[10px] text-slate-400">BRL</span>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-[10px] text-slate-400">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.1"
-                      value={price}
-                      onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-7 pr-2.5 py-1.5 text-xs font-medium text-white focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-200 mb-1">
-                    <label className="flex items-center gap-1 font-medium">
-                      <AlertTriangle className="h-3 w-3 text-blue-400" />
-                      Ongkir Ditagih
-                    </label>
-                    <span className="text-[10px] text-slate-400">Kurir</span>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-[10px] font-semibold text-white">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={actualFreight}
-                      onChange={(e) => setActualFreight(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-7 pr-2.5 py-1.5 text-xs font-bold text-white focus:border-blue-500 focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Peringatan Out-of-Distribution */}
-              {validationWarnings.length > 0 && (
-                <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-2 text-[10px] text-slate-300 space-y-0.5">
-                  <div className="font-semibold text-white">Catatan Batas Data Latih:</div>
-                  {validationWarnings.map((w, idx) => (
-                    <div key={idx}>• {w}</div>
-                  ))}
-                </div>
-              )}
-
-              {/* Tombol Utama: Electric Blue Elegan */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 text-xs shadow-md shadow-blue-600/30 transition active:scale-[0.99] disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    Memproses Analisis...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5 text-blue-200" />
-                    <span>Analisis Kebocoran Tarif Ongkir</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-
-          {/* KOLOM KANAN: Hasil Evaluasi & Grafik (7 Kolom) */}
-          <div className="lg:col-span-7 space-y-4">
-            {result ? (
-              <>
-                {/* 1. Status Evaluasi Utama */}
-                <div
-                  className={`rounded-2xl border p-4.5 transition-all backdrop-blur-sm ${
-                    result.isLeak
-                      ? "border-rose-500/40 bg-gradient-to-br from-rose-950/30 via-slate-900/60 to-[#0d1322] text-white"
-                      : "border-slate-800 bg-[#0d1322]/90 text-white"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
-                          result.isLeak
-                            ? "border-rose-500/30 bg-rose-500/10 text-rose-400"
-                            : "border-blue-500/30 bg-blue-500/10 text-blue-400"
-                        }`}
-                      >
-                        {result.isLeak ? (
-                          <ShieldAlert className="h-5 w-5" />
-                        ) : (
-                          <ShieldCheck className="h-5 w-5" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">
-                            Status Analisis
-                          </span>
-                          <span
-                            className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
-                              result.isLeak
-                                ? "bg-rose-500 text-white"
-                                : "bg-blue-600 text-white"
-                            }`}
-                          >
-                            {result.isLeak ? "TERINDIKASI BOCOR" : "TARIF NORMAL"}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-semibold text-white mt-0.5">
-                          {result.isLeak
-                            ? "Terdeteksi Kebocoran Biaya Logistik"
-                            : "Tarif Logistik Sesuai Estimasi Wajar"}
-                        </h3>
-                      </div>
+              <CardContent className="flex flex-col gap-4">
+                {/* Row 1: Berat & Jarak */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="weight" className="text-xs flex items-center gap-1">
+                        <Scale className="size-3 text-muted-foreground" />
+                        Berat (kg)
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground">0.05-30</span>
                     </div>
+                    <div className="relative">
+                      <Input
+                        id="weight"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        max="100"
+                        value={weightKg}
+                        onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-xs font-mono pr-7"
+                        required
+                      />
+                      <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
+                        kg
+                      </span>
+                    </div>
+                  </div>
 
-                    <span className="text-[10px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-mono">
-                      {result.source === "api" ? "FastAPI Live" : "Engine v5"}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="distance" className="text-xs flex items-center gap-1">
+                        <Navigation className="size-3 text-muted-foreground" />
+                        Jarak (km)
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground">1.5-3.135</span>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="distance"
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="6000"
+                        value={distanceKm}
+                        onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-xs font-mono pr-7"
+                        required
+                      />
+                      <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">
+                        km
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Dimensi & Volume */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs flex items-center gap-1">
+                      <Maximize2 className="size-3 text-muted-foreground" />
+                      Dimensi (P × L × T cm)
+                    </Label>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      Vol: {volumeCm3.toLocaleString()} cm³
                     </span>
                   </div>
-
-                  <p className="mt-2 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-2">
-                    {result.message}
-                  </p>
-
-                  {/* Estimasi Selisih Kerugian (Hanya jika bocor) */}
-                  {result.isLeak && (
-                    <div className="mt-2.5 flex items-center justify-between rounded-lg bg-rose-950/60 border border-rose-700/40 px-3 py-2">
-                      <span className="text-[11px] text-rose-200 flex items-center gap-1.5 font-medium">
-                        <TrendingUp className="h-3.5 w-3.5 text-rose-400" />
-                        Estimasi Selisih Kebocoran:
-                      </span>
-                      <span className="text-sm font-bold font-mono text-white">
-                        R$ {result.potentialLoss.toFixed(2)} BRL
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={lengthCm}
+                        onChange={(e) => setLengthCm(parseFloat(e.target.value) || 1)}
+                        className="h-8 text-xs font-mono text-center pr-4"
+                        placeholder="P"
+                      />
+                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                        P
                       </span>
                     </div>
-                  )}
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={widthCm}
+                        onChange={(e) => setWidthCm(parseFloat(e.target.value) || 1)}
+                        className="h-8 text-xs font-mono text-center pr-4"
+                        placeholder="L"
+                      />
+                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                        L
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={heightCm}
+                        onChange={(e) => setHeightCm(parseFloat(e.target.value) || 1)}
+                        className="h-8 text-xs font-mono text-center pr-4"
+                        placeholder="T"
+                      />
+                      <span className="absolute right-1.5 top-2 text-[9px] text-muted-foreground">
+                        T
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* 2. Empat Metrik Kunci (Simetris & Jelas) */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="rounded-xl border border-slate-800 bg-[#0d1322]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Ongkir Wajar (AI)</span>
-                    <p className="mt-0.5 text-base font-bold font-mono text-blue-400">
-                      R$ {result.predictedRate.toFixed(2)}
-                    </p>
-                    <span className="text-[9px] text-slate-400">Baseline Model</span>
+                <Separator />
+
+                {/* Row 3: Nilai Barang & Ongkir Ditagih */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="price" className="text-xs flex items-center gap-1">
+                        <DollarSign className="size-3 text-muted-foreground" />
+                        Nilai Barang
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground">BRL</span>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground font-mono">
+                        R$
+                      </span>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        value={price}
+                        onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-xs font-mono pl-7"
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0d1322]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Ongkir Ditagihkan</span>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="freight" className="text-xs flex items-center gap-1 font-medium">
+                        <AlertTriangle className="size-3 text-muted-foreground" />
+                        Ongkir Ditagih
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground">Kurir</span>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-[10px] text-muted-foreground font-mono">
+                        R$
+                      </span>
+                      <Input
+                        id="freight"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={actualFreight}
+                        onChange={(e) => setActualFreight(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-xs font-mono font-semibold pl-7"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Validasi Warning Alert shadcn */}
+                {validationWarnings.length > 0 && (
+                  <Alert variant="destructive" className="py-2 px-3 text-xs">
+                    <AlertTitle className="text-xs font-semibold">Perhatian Batas Data:</AlertTitle>
+                    <AlertDescription className="text-[11px] mt-1 space-y-0.5">
+                      {validationWarnings.map((w, idx) => (
+                        <div key={idx}>• {w}</div>
+                      ))}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+
+              <CardFooter className="pt-2">
+                <Button type="submit" disabled={loading} className="w-full h-9 text-xs">
+                  {loading ? (
+                    <>
+                      <RefreshCw className="size-3.5 animate-spin mr-2" />
+                      Memproses Residual...
+                    </>
+                  ) : (
+                    <>
+                      <span>Analisis Kebocoran Ongkir</span>
+                      <ArrowRight className="size-3.5 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+
+          {/* KOLOM KANAN: Hasil Evaluasi & Grafik */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            {result ? (
+              <>
+                {/* Status Evaluasi Card */}
+                <Card className={result.isLeak ? "border-destructive/50 bg-destructive/5" : ""}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex size-9 items-center justify-center rounded-lg border ${
+                            result.isLeak
+                              ? "border-destructive/30 bg-destructive/10 text-destructive"
+                              : "border-border bg-muted text-foreground"
+                          }`}
+                        >
+                          {result.isLeak ? (
+                            <ShieldAlert className="size-5" />
+                          ) : (
+                            <ShieldCheck className="size-5" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+                              Hasil Evaluasi
+                            </span>
+                            <Badge variant={result.isLeak ? "destructive" : "secondary"}>
+                              {result.isLeak ? "TERINDIKASI BOCOR" : "TARIF NORMAL"}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-base mt-0.5">
+                            {result.isLeak
+                              ? "Terdeteksi Kebocoran Biaya Logistik"
+                              : "Tarif Logistik Sesuai Estimasi Wajar"}
+                          </CardTitle>
+                        </div>
+                      </div>
+
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        {result.source === "api" ? "FastAPI Live" : "Engine v5"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="pt-0 text-xs text-muted-foreground leading-relaxed">
+                    <p>{result.message}</p>
+
+                    {result.isLeak && (
+                      <div className="mt-3 flex items-center justify-between rounded-md bg-destructive/10 border border-destructive/20 p-2.5">
+                        <span className="text-xs text-foreground flex items-center gap-1.5 font-medium">
+                          <TrendingUp className="size-4 text-destructive" />
+                          Estimasi Selisih Kerugian:
+                        </span>
+                        <span className="text-sm font-bold font-mono text-destructive">
+                          R$ {result.potentialLoss.toFixed(2)} BRL
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 4 Metric Cards Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card className="p-3">
+                    <span className="text-[10px] text-muted-foreground block">
+                      Ongkir Wajar (AI)
+                    </span>
+                    <p className="text-base font-bold font-mono mt-1 text-foreground">
+                      R$ {result.predictedRate.toFixed(2)}
+                    </p>
+                    <span className="text-[9px] text-muted-foreground">Baseline Model</span>
+                  </Card>
+
+                  <Card className="p-3">
+                    <span className="text-[10px] text-muted-foreground block">
+                      Ongkir Ditagihkan
+                    </span>
                     <p
-                      className={`mt-0.5 text-base font-bold font-mono ${
-                        result.isLeak ? "text-rose-400" : "text-white"
+                      className={`text-base font-bold font-mono mt-1 ${
+                        result.isLeak ? "text-destructive" : "text-foreground"
                       }`}
                     >
                       R$ {result.actualRate.toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-slate-400">Invoice Kurir</span>
-                  </div>
+                    <span className="text-[9px] text-muted-foreground">Invoice Kurir</span>
+                  </Card>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0d1322]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Rasio Tagihan/Wajar</span>
+                  <Card className="p-3">
+                    <span className="text-[10px] text-muted-foreground block">
+                      Rasio Tagihan/Wajar
+                    </span>
                     <p
-                      className={`mt-0.5 text-base font-bold font-mono ${
-                        result.ratio > 2.0 ? "text-rose-400" : "text-white"
+                      className={`text-base font-bold font-mono mt-1 ${
+                        result.ratio > 2.0 ? "text-destructive" : "text-foreground"
                       }`}
                     >
                       {result.ratio}x
                     </p>
-                    <span className="text-[9px] text-slate-400">
-                      {result.ratio > 1 ? "Lebih tinggi" : "Normal"}
+                    <span className="text-[9px] text-muted-foreground">
+                      {result.ratio > 1 ? "Lebih mahal" : "Wajar"}
                     </span>
-                  </div>
+                  </Card>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0d1322]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Residual vs Threshold</span>
+                  <Card className="p-3">
+                    <span className="text-[10px] text-muted-foreground block">
+                      Residual vs Ambang
+                    </span>
                     <p
-                      className={`mt-0.5 text-base font-bold font-mono ${
-                        result.residual > result.threshold ? "text-rose-400" : "text-white"
+                      className={`text-base font-bold font-mono mt-1 ${
+                        result.residual > result.threshold ? "text-destructive" : "text-foreground"
                       }`}
                     >
                       {result.residual}
                     </p>
-                    <span className="text-[9px] text-slate-400">
+                    <span className="text-[9px] text-muted-foreground">
                       Ambang: {result.threshold.toFixed(2)}
                     </span>
-                  </div>
+                  </Card>
                 </div>
 
-                {/* 3. Komparasi Bar Chart: Aksen Biru & Kontras Putih */}
-                <div className="rounded-2xl border border-slate-800 bg-[#0d1322]/80 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
-                        <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
-                        Komparasi Nilai Ongkir (BRL)
-                      </h4>
-                      <p className="text-[10px] text-slate-400">
-                        Perbandingan tarif wajar rekomendasi AI (Biru) vs ongkir ditagihkan
-                      </p>
+                {/* Komparasi Nilai Bar Chart Card */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                      <BarChart3 className="size-3.5" />
+                      Komparasi Nilai Ongkir (BRL)
+                    </CardTitle>
+                    <CardDescription className="text-[10px]">
+                      Perbandingan tarif wajar rekomendasi model vs ongkir aktual
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-44 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                            tickLine={false}
+                            unit=" R$"
+                          />
+                          <Tooltip
+                            cursor={{ fill: "hsl(var(--muted) / 0.5)", radius: 6 }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const item = payload[0];
+                                const isActual = item.payload.name === "Ongkir Ditagihkan";
+                                return (
+                                  <div className="rounded-lg border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md font-sans">
+                                    <div className="font-semibold">{item.payload.name}</div>
+                                    <div className="mt-1 flex items-center gap-1.5">
+                                      <span className="text-muted-foreground">Nilai:</span>
+                                      <span
+                                        className={`font-mono font-bold ${
+                                          isActual && result.isLeak
+                                            ? "text-destructive"
+                                            : "text-foreground"
+                                        }`}
+                                      >
+                                        R$ {Number(item.value).toFixed(2)} BRL
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <ReferenceLine
+                            y={result.predictedRate}
+                            stroke="hsl(var(--foreground))"
+                            strokeDasharray="3 3"
+                            label={{
+                              value: "Batas Wajar",
+                              fill: "hsl(var(--muted-foreground))",
+                              position: "insideTopRight",
+                              fontSize: 10,
+                            }}
+                          />
+                          <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                            {chartData.map((entry, idx) => (
+                              <Cell key={`cell-${idx}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="h-44 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fill: "#94a3b8", fontSize: 11 }}
-                          axisLine={{ stroke: "#1e293b" }}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fill: "#64748b", fontSize: 10 }}
-                          axisLine={{ stroke: "#1e293b" }}
-                          tickLine={false}
-                          unit=" R$"
-                        />
-                        <Tooltip
-                          cursor={{ fill: "rgba(255, 255, 255, 0.03)", radius: 6 }}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const item = payload[0];
-                              const isActual = item.payload.name === "Ongkir Ditagihkan";
-                              return (
-                                <div className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs shadow-2xl">
-                                  <div className="font-semibold text-white">
-                                    {item.payload.name}
-                                  </div>
-                                  <div className="mt-1 flex items-center gap-2">
-                                    <span className="text-slate-400">Nilai:</span>
-                                    <span
-                                      className={`font-bold font-mono ${
-                                        isActual && result.isLeak
-                                          ? "text-rose-400"
-                                          : isActual
-                                          ? "text-slate-200"
-                                          : "text-blue-400"
-                                      }`}
-                                    >
-                                      R$ {Number(item.value).toFixed(2)} BRL
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <ReferenceLine
-                          y={result.predictedRate}
-                          stroke="#38bdf8"
-                          strokeDasharray="3 3"
-                          label={{
-                            value: "Batas Wajar",
-                            fill: "#38bdf8",
-                            position: "insideTopRight",
-                            fontSize: 10,
-                          }}
-                        />
-                        <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                          {chartData.map((entry, idx) => (
-                            <Cell key={`cell-${idx}`} fill={entry.fill} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* 4. Rekomendasi Audit */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-[11px] text-slate-300">
-                  <div className="font-semibold text-white flex items-center gap-1.5 mb-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />
-                    Rekomendasi Tindak Lanjut:
-                  </div>
-                  {result.isLeak ? (
-                    <p className="text-slate-300 leading-relaxed">
-                      Lakukan evaluasi terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
-                      Potensi penghematan biaya sebesar{" "}
-                      <strong className="text-white font-mono">
-                        R$ {result.potentialLoss.toFixed(2)} BRL
-                      </strong>{" "}
-                      dapat diajukan sebagai klaim penyesuaian tarif.
-                    </p>
-                  ) : (
-                    <p className="text-slate-300 leading-relaxed">
-                      Nilai residual berada pada rentang wajar di bawah ambang batas toleransi.
-                      Transaksi logistik ini efisien dan tidak memerlukan tinjauan manual.
-                    </p>
-                  )}
-                </div>
+                {/* Rekomendasi Audit Logistik */}
+                <Card className="bg-muted/30">
+                  <CardContent className="pt-4 text-xs text-muted-foreground flex items-start gap-2.5">
+                    <CheckCircle2 className="size-4 text-foreground mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-semibold text-foreground block mb-0.5">
+                        Rekomendasi Tindak Lanjut:
+                      </span>
+                      {result.isLeak ? (
+                        <p>
+                          Lakukan audit terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
+                          Potensi penghematan biaya logistik sebesar{" "}
+                          <strong className="text-foreground font-mono">
+                            R$ {result.potentialLoss.toFixed(2)} BRL
+                          </strong>{" "}
+                          dapat diajukan sebagai klaim penyesuaian tarif.
+                        </p>
+                      ) : (
+                        <p>
+                          Nilai residual berada pada rentang wajar di bawah ambang batas toleransi model.
+                          Transaksi ini efisien dan tidak memerlukan audit manual.
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </>
             ) : null}
           </div>
@@ -786,7 +804,7 @@ export default function ProfitLeakDashboard() {
       </main>
 
       {/* Footer Tim */}
-      <footer className="mt-8 border-t border-slate-800/80 bg-[#080c16] py-4 text-center text-[11px] text-slate-400">
+      <footer className="border-t py-4 text-center text-xs text-muted-foreground">
         ProfitLeak AI © 2026 • Dikembangkan oleh Tim KOMEM • Hackathon 2026
       </footer>
     </div>
