@@ -1,5 +1,5 @@
 """
-PROFITLEAK AI - QA TEST SUITE v6 (Python Standalone)
+PROFITLEAK AI - QA TEST SUITE v6 + GEMINI ADVICE (Python Standalone)
 Pemilik: Febri (QA + Docs + FE Support)
 Lokasi : frontend/scripts/test_api.py
 """
@@ -12,7 +12,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 FIXTURE_PATH = BASE_DIR / "fixtures.json"
-CSV_PATH = BASE_DIR / "sample_transactions.csv"
 
 with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
     fixtures = json.load(f)
@@ -26,7 +25,7 @@ for arg in sys.argv[1:]:
 threshold = fixtures.get("contract_threshold", 3.09779)
 
 print("=" * 72)
-print(" PROFITLEAK AI - AUTOMATED QA TEST RUNNER (PYTHON v6)")
+print(" PROFITLEAK AI - AUTOMATED QA TEST RUNNER (PYTHON v6 + ADVICE)")
 print(f" Mode: {'MOCK SIMULATION' if is_mock else f'LIVE SERVER ({base_url})'}")
 print(f" Threshold Kontrak: {threshold}")
 print("=" * 72 + "\n")
@@ -50,8 +49,18 @@ def mock_request(endpoint, method="GET", payload=None):
         return 200, {"status": "ok", "service": "profitleak-api"}
     if endpoint == "/api/model-info":
         return 200, {"threshold": threshold, "detectors": ["rate", "margin"]}
-    if endpoint == "/api/upload-csv":
-        return 200, {"summary": {"total_rows": 5, "analysed": 4, "leaks": 2}}
+    if endpoint == "/api/advice":
+        if not payload or not isinstance(payload, dict) or "summary" not in payload:
+            return 400, {"detail": "Payload tidak valid"}
+        leaks = payload.get("summary", {}).get("leaks", 0)
+        return 200, {
+            "source": "rule_based" if leaks == 0 else "gemini",
+            "headline": "Ringkasan Hasil Evaluasi Ongkir",
+            "ringkasan": "Analisis tarif pengiriman selesai.",
+            "prioritas": [],
+            "per_baris": [],
+            "catatan": "Saran AI, bukan nasihat keuangan."
+        }
 
     weight = payload.get("weight_kg", 0)
     dist = payload.get("distance_km", 0)
@@ -90,7 +99,7 @@ def request(endpoint, method="GET", payload=None):
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
 
     try:
-        with urllib.request.urlopen(req, timeout=5) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:
             status = response.getcode()
             body = json.loads(response.read().decode("utf-8"))
             return status, body
@@ -132,12 +141,35 @@ def test_invalid_weight():
     status, body = request("/api/detect-leak", "POST", tc["input"])
     assert status == 400 and isinstance(body.get("detail"), str)
 
+def test_advice():
+    payload = {
+        "filename": "demo_ongkir_mahal.csv",
+        "threshold": threshold,
+        "summary": {"total_rows": 5, "analysed": 5, "leaks": 2, "estimated_loss": 150.0},
+        "rows": [{"line": 2, "actual_rate": 60.0, "predicted_rate": 15.0, "is_leak": True}]
+    }
+    status, body = request("/api/advice", "POST", payload)
+    assert status == 200, f"Expected 200, got {status}"
+    assert "headline" in body and "ringkasan" in body, "Response advice missing required fields"
+
+def test_advice_zero():
+    payload = {
+        "filename": "demo_normal.csv",
+        "threshold": threshold,
+        "summary": {"total_rows": 5, "analysed": 5, "leaks": 0, "estimated_loss": 0.0},
+        "rows": []
+    }
+    status, body = request("/api/advice", "POST", payload)
+    assert status == 200 and body.get("source") == "rule_based"
+
 run_test("TC-01-HEALTH", "Health check endpoint", test_health)
 run_test("TC-02-MODEL-INFO", "Model info & scope metadata", test_model_info)
 run_test("TC-03-PREDICT", "Predict rate endpoint", test_predict)
 run_test("TC-04-LEAK-NORMAL", "Detect normal transaction (is_leak: false)", test_leak_normal)
 run_test("TC-05-LEAK-RATE", "Detect rate leak (is_leak: true)", test_leak_rate)
 run_test("TC-06-INVALID-400", "Boundary check returns HTTP 400", test_invalid_weight)
+run_test("TC-07-ADVICE-POST", "Saran AI endpoint (POST /api/advice)", test_advice)
+run_test("TC-08-ADVICE-ZERO", "Saran AI 0 leak (hemat token)", test_advice_zero)
 
 print("\n" + "=" * 72)
 passed = sum(1 for r in results if r[2] == "PASS")
