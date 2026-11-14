@@ -10,15 +10,14 @@ export function Hero3D() {
     const container = containerRef.current;
     if (!container) return;
 
-    // Dimensi window/viewport penuh untuk sticky background
-    let width = window.innerWidth;
-    let height = window.innerHeight;
+    let width = container.clientWidth || 450;
+    let height = container.clientHeight || 450;
 
     // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0, 8.5);
+    camera.position.set(0, 0, 7.8);
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -48,39 +47,9 @@ export function Hero3D() {
     rimLight.position.set(2, 4, 4);
     scene.add(rimLight);
 
-    // 3. Root 3D Group & Subgroups
+    // 3. Root 3D Group (Berada di tengah container samping judul besar)
     const rootGroup = new THREE.Group();
     scene.add(rootGroup);
-
-    // Shield group: perisai yang membeku / diam saat discroll
-    const shieldGroup = new THREE.Group();
-    rootGroup.add(shieldGroup);
-
-    // Core group: kubus, cincin, dan partikel yang SELALU beranimasi aktif
-    const coreGroup = new THREE.Group();
-    rootGroup.add(coreGroup);
-
-    // Parameter layout: awal (top) vs saat discroll (kiri membesar sebagai background monumental)
-    let isDesktop = window.innerWidth >= 1024;
-    let startX = isDesktop ? 2.4 : 0;
-    let startY = isDesktop ? 0.1 : 0.8;
-    let startScale = isDesktop ? 1.05 : 0.72;
-
-    let targetX = isDesktop ? -2.75 : -1.0;
-    let targetY = isDesktop ? -0.1 : 0.2;
-    let targetScale = isDesktop ? 2.4 : 1.45;
-
-    const updateLayout = () => {
-      isDesktop = window.innerWidth >= 1024;
-      startX = isDesktop ? 2.4 : 0;
-      startY = isDesktop ? 0.1 : 0.8;
-      startScale = isDesktop ? 1.05 : 0.72;
-
-      targetX = isDesktop ? -2.75 : -1.0;
-      targetY = isDesktop ? -0.1 : 0.2;
-      targetScale = isDesktop ? 2.4 : 1.45;
-    };
-    updateLayout();
 
     // 4. Geometri Perisai 3D (Clean Extrusion sesuai Logo Resmi)
     const shieldShape = new THREE.Shape();
@@ -122,7 +91,7 @@ export function Hero3D() {
     });
 
     const shieldMesh = new THREE.Mesh(shieldGeometry, shieldMaterial);
-    shieldGroup.add(shieldMesh);
+    rootGroup.add(shieldMesh);
 
     // 5. Kubus Logistik 3D di Tengah (Interlocking Cube)
     const cubeSize = 1.05;
@@ -140,7 +109,7 @@ export function Hero3D() {
 
     const cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterials);
     cubeMesh.rotation.set(0.65, 0.78, 0.2);
-    coreGroup.add(cubeMesh);
+    rootGroup.add(cubeMesh);
 
     // Wireframe edge glow
     const wireGeo = new THREE.EdgesGeometry(cubeGeometry);
@@ -153,17 +122,17 @@ export function Hero3D() {
     const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
     const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
     ring1.rotation.x = Math.PI / 2.3;
-    coreGroup.add(ring1);
+    rootGroup.add(ring1);
 
     const ringGeo2 = new THREE.TorusGeometry(3.3, 0.015, 16, 100);
     const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.3 });
     const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
     ring2.rotation.x = Math.PI / 3;
     ring2.rotation.y = Math.PI / 6;
-    coreGroup.add(ring2);
+    rootGroup.add(ring2);
 
     // 7. Partikel Aliran Transaksi 3D (Swarm Audit Nodes)
-    const particleCount = 80;
+    const particleCount = 75;
     const particlePositions = new Float32Array(particleCount * 3);
     const particleColors = new Float32Array(particleCount * 3);
 
@@ -172,7 +141,7 @@ export function Hero3D() {
     const colNavy = new THREE.Color(0x1e40af);
 
     for (let i = 0; i < particleCount; i++) {
-      const radius = 2.4 + Math.random() * 2.2;
+      const radius = 2.4 + Math.random() * 2.0;
       const theta = Math.random() * Math.PI * 2;
       const phi = (Math.random() - 0.5) * Math.PI * 0.9;
 
@@ -199,9 +168,17 @@ export function Hero3D() {
     });
 
     const particles = new THREE.Points(particleGeo, particleMat);
-    coreGroup.add(particles);
+    rootGroup.add(particles);
 
-    // 8. Interaktivitas: Drag, Mouse Parallax & Dynamic Scroll Coupling
+    // Responsif: skala awal
+    const updateScale = () => {
+      const isDesktop = (container.clientWidth || window.innerWidth) >= 640;
+      const s = isDesktop ? 1.08 : 0.88;
+      rootGroup.scale.set(s, s, s);
+    };
+    updateScale();
+
+    // 8. Interaktivitas: Drag & Mouse Parallax
     let targetRotX = 0;
     let targetRotY = 0;
     let currentRotX = 0;
@@ -210,15 +187,10 @@ export function Hero3D() {
     let prevPointerX = 0;
     let prevPointerY = 0;
 
-    let targetScrollY = 0;
-    let smoothScrollY = 0;
-
     const handlePointerDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).tagName === "CANVAS") {
-        isDragging = true;
-        prevPointerX = e.clientX;
-        prevPointerY = e.clientY;
-      }
+      isDragging = true;
+      prevPointerX = e.clientX;
+      prevPointerY = e.clientY;
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -228,15 +200,18 @@ export function Hero3D() {
         prevPointerX = e.clientX;
         prevPointerY = e.clientY;
 
-        targetRotY += deltaX * 0.007;
-        targetRotX += deltaY * 0.007;
+        targetRotY += deltaX * 0.008;
+        targetRotX += deltaY * 0.008;
         targetRotX = Math.max(-0.8, Math.min(0.8, targetRotX));
       } else {
-        const normX = e.clientX / window.innerWidth - 0.5;
-        const normY = e.clientY / window.innerHeight - 0.5;
+        const rect = container.getBoundingClientRect();
+        const normX = (e.clientX - rect.left) / rect.width - 0.5;
+        const normY = (e.clientY - rect.top) / rect.height - 0.5;
 
-        targetRotY = normX * 0.45;
-        targetRotX = -normY * 0.35;
+        if (normX >= -1 && normX <= 1 && normY >= -1 && normY <= 1) {
+          targetRotY = normX * 0.6;
+          targetRotX = -normY * 0.5;
+        }
       }
     };
 
@@ -244,24 +219,20 @@ export function Hero3D() {
       isDragging = false;
     };
 
-    const handleScroll = () => {
-      targetScrollY = window.scrollY;
-    };
-
-    window.addEventListener("pointerdown", handlePointerDown);
+    container.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("scroll", handleScroll, { passive: true });
 
     // 9. Resize Handling
     const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
+      if (!container) return;
+      width = container.clientWidth || 450;
+      height = container.clientHeight || 450;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      updateLayout();
+      updateScale();
     };
 
     window.addEventListener("resize", handleResize);
@@ -279,41 +250,28 @@ export function Hero3D() {
       const elapsed = (now - startTime) / 1000;
       prevTime = now;
 
-      // 1. Interpolasi Scroll Mulus (Damping)
-      smoothScrollY += (targetScrollY - smoothScrollY) * 0.07;
-      const progress = Math.min(1, Math.max(0, smoothScrollY / 550));
-      // Smoothstep curve
-      const t = progress * progress * (3 - 2 * progress);
-
-      // 2. Transformasi Root Group: Membesar & Pindah ke Sisi Kiri Layar saat discroll
-      const curX = THREE.MathUtils.lerp(startX, targetX, t);
-      const curY = THREE.MathUtils.lerp(startY, targetY, t);
-      const curScale = THREE.MathUtils.lerp(startScale, targetScale, t);
-      rootGroup.position.set(curX, curY, 0);
-      rootGroup.scale.set(curScale, curScale, curScale);
-
-      // 3. Rotasi Perisai:
-      // Di atas (t = 0), perisai berotasi anggun dan merespons kursor.
-      // Saat discroll (t -> 1), rotasi perisai melambat dan MEMBEKU DIAM pada sudut statis yang gagah.
+      // Rotasi kontinu halus
       if (!isDragging) {
-        targetRotY += delta * 0.16 * (1 - t);
+        targetRotY += delta * 0.16;
       }
 
+      // Spring damping lerp
       currentRotX += (targetRotX - currentRotX) * 0.06;
       currentRotY += (targetRotY - currentRotY) * 0.06;
 
-      // Saat t = 1, perisai diam stabil tanpa animasi rotasi
-      shieldGroup.rotation.x = THREE.MathUtils.lerp(currentRotX, 0.02, t);
-      shieldGroup.rotation.y = THREE.MathUtils.lerp(currentRotY, -0.12, t);
+      rootGroup.rotation.x = currentRotX;
+      rootGroup.rotation.y = currentRotY;
 
-      // 4. KUBUS DI TENGAH TETAP MEMILIKI ANIMASI SEPERTI BIASA!
+      // Orbit kubus mandiri di dalam perisai
       cubeMesh.rotation.x = 0.65 + Math.sin(elapsed * 1.2) * 0.15;
       cubeMesh.rotation.y = 0.78 + elapsed * 0.45;
       cubeMesh.position.y = Math.sin(elapsed * 1.8) * 0.08;
 
-      // Cincin & Partikel tetap berputar anggun mengiringi kubus
+      // Cincin hologram
       ring1.rotation.z = elapsed * 0.3;
       ring2.rotation.z = -elapsed * 0.25;
+
+      // Partikel audit
       particles.rotation.y = -elapsed * 0.1;
 
       renderer.render(scene, camera);
@@ -324,10 +282,9 @@ export function Hero3D() {
     // 11. Cleanup on Unmount
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("pointerdown", handlePointerDown);
+      container.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
 
       shieldGeometry.dispose();
@@ -351,12 +308,10 @@ export function Hero3D() {
   }, []);
 
   return (
-    // Sticky Background Penuh yang tidak bergeser saat di-scroll
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
-      <div
-        ref={containerRef}
-        className="w-full h-full pointer-events-auto cursor-grab active:cursor-grabbing"
-      />
-    </div>
+    // Model 3D Hero mandiri: berposisi di samping judul besar, tetap di atas saat di-scroll
+    <div
+      ref={containerRef}
+      className="w-full h-full min-h-[380px] sm:min-h-[460px] lg:min-h-[520px] relative flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+    />
   );
 }

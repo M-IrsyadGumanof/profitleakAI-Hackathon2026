@@ -21,13 +21,10 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       
-      {/* 3D Model Sticky Background: Membesar saat discroll, berpindah ke sisi kiri layar, perisai membeku dan kubus tetap beranimasi */}
-      <Hero3D />
-
-      {/* Konten Halaman yang Melayang Mulus di Atas Background 3D */}
+      {/* Konten Halaman */}
       <div className="relative z-10 flex flex-col gap-24 sm:gap-32 py-6 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         
-        {/* 1. Hero Section (Konten Kiri + Area Pandang 3D Kanan) */}
+        {/* 1. Hero Section (Konten Kiri + Elemen 3D Mandiri di Sisi Kanan) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center pt-2 sm:pt-6 min-h-[75vh]">
           
           {/* Kolom Kiri: Headline, Subtitle, CTA & Telemetri Ringkas (Col 7) */}
@@ -89,9 +86,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Kolom Kanan: Area Pandang Model 3D Transparan (Col 5) */}
-          <div className="lg:col-span-5 min-h-[380px] sm:min-h-[440px] pointer-events-none relative flex items-center justify-center">
-            {/* Area ini sengaja dibiarkan terbuka agar perisai 3D dari background sticky terlihat utuh dan bersih di awal */}
+          {/* Kolom Kanan: Model 3D Hero Mandiri di Samping Judul Besar (Tetap di atas saat discroll) */}
+          <div className="lg:col-span-5 h-[380px] sm:h-[460px] lg:h-[520px] w-full relative flex items-center justify-center">
+            <Hero3D />
           </div>
 
         </section>
