@@ -1,0 +1,435 @@
+========================================================================
+ PEMBAGIAN TUGAS TIM 5 ORANG - PROFITLEAK AI
+ Projek  : Prediksi Tarif Ongkir + Deteksi Kebocoran Profit
+ Sumber  : profitleak_final_model_v5.pkl + info JSON v5
+ Cakupan : SELURUH SIKLUS PROJECT (dari awal sampai web selesai)
+------------------------------------------------------------------------
+ ANGGOTA TIM
+  - Irsyad   -> Backend / API Engineer        (branch: feat/irsyad-backend)
+  - Galang   -> ML / Data Engineer            (branch: feat/galang-ml)
+  - Ihqfal   -> Frontend UI Engineer          (branch: feat/ihqfal-ui)
+  - Suhafdal -> Frontend Integration Engineer (branch: feat/suhafdal-integration)
+  - Febri    -> QA + Docs + FE Support        (branch: feat/febri-qa)
+------------------------------------------------------------------------
+ PRINSIP KERJA
+ 1. SEMUA anggota menulis kode (tidak ada yang hanya dokumen/tester).
+ 2. Demo dilakukan BERSAMA-SAMA oleh tim.
+ 3. Setiap orang punya file/folder milik sendiri -> tidak ada bentrok.
+ 4. Titik temu hanya SATU: KONTRAK DATA/API (Bagian 4).
+ 5. 1 orang = 1 branch = 1 area file.
+------------------------------------------------------------------------
+ URUTAN ALUR (SIAPA MULAI DULU)
+  (1) Irsyad + Galang  -> menyusun KONTRAK DATA/API (paling awal)
+        |
+        v
+  (2) SEMUA (Irsyad, Galang, Ihqfal, Suhafdal, Febri) -> kerja PARALEL
+        |                                              di branch masing2
+        v
+  (3) Suhafdal         -> INTEGRASI UI <-> backend (feat/* -> develop)
+        |
+        v
+  (4) Febri            -> QA menyeluruh  (temuan diperbaiki tiap pemilik)
+        |
+        v
+  (5) SEMUA            -> penyelesaian + demo + merge develop -> main
+========================================================================
+
+
+========================================================================
+1. PETA 7 BRANCH  (RENCANA KETENTUAN - TIDAK DIBUATKAN DI SINI)
+========================================================================
+Catatan: Dokumen ini hanya MENETAPKAN pembagian. Pembuatan branch
+         dilakukan oleh tim sendiri.
+
++-----+----------------------------------+----------+---------------------------+
+| No  | Nama Branch                      | Pemilik  | Boleh Ubah File Apa        |
++-----+----------------------------------+----------+---------------------------+
+| 1   | main                             | Bersama  | TIDAK ADA commit langsung; |
+|     |                                  |          | hanya menerima merge dari  |
+|     |                                  |          | develop                    |
++-----+----------------------------------+----------+---------------------------+
+| 2   | develop                          | Bersama  | Integrasi harian; menerima |
+|     |                                  |          | merge dari feat/*          |
++-----+----------------------------------+----------+---------------------------+
+| 3   | feat/irsyad-backend              | Irsyad   | backend/main.py            |
+|     |                                  |          | backend/requirements.txt   |
++-----+----------------------------------+----------+---------------------------+
+| 4   | feat/galang-ml                   | Galang   | model/                     |
+|     |                                  |          | notebook/                  |
++-----+----------------------------------+----------+---------------------------+
+| 5   | feat/ihqfal-ui                   | Ihqfal   | frontend/app/page.tsx      |
+|     |                                  |          | frontend/app/layout.tsx    |
+|     |                                  |          | frontend/app/globals.css   |
++-----+----------------------------------+----------+---------------------------+
+| 6   | feat/suhafdal-integration        | Suhafdal | frontend/app/lib/api.ts    |
+|     |                                  |          | frontend/app/lib/types.ts  |
+|     |                                  |          | frontend/.env.local        |
++-----+----------------------------------+----------+---------------------------+
+| 7   | feat/febri-qa                    | Febri    | frontend/app/components/   |
+|     |                                  |          | frontend/scripts/          |
+|     |                                  |          | README / docs              |
++-----+----------------------------------+----------+---------------------------+
+
+
+========================================================================
+1B. ALUR MERGE & ATURAN BRANCH
+========================================================================
+Alur:   feat/*  -->  develop  -->  main
+  - Branch pribadi (3-7) di-merge ke develop setelah review antar anggota.
+  - develop di-merge ke main hanya saat sudah stabil / siap demo.
+  - DILARANG commit/merge langsung ke main.
+
+Aturan:
+  1. Satu orang hanya bekerja di branch pribadinya (3-7).
+  2. Satu branch = satu area file (lihat Peta 7 Branch di atas).
+  3. Jika perlu menyentuh file orang lain: minta izin + sepakati dulu.
+  4. Perubahan format data/API HANYA lewat pembaruan KONTRAK (Bagian 4),
+     disepakati semua (khususnya Irsyad + Galang).
+  5. Commit kecil & sering; sebutkan area yang disentuh.
+  6. Sebelum PR/merge ke develop: pastikan tidak mengubah file di luar
+     area milikmu.
+
+
+========================================================================
+2. RINGKASAN PERAN & AREA KODE (ANTI-BENTROK)
+========================================================================
+
++---------------+-----------------------------+-------------------------+
+| Nama          | Peran                       | Area Kode Eksklusif     |
++---------------+-----------------------------+-------------------------+
+| Irsyad        | Backend / API Engineer      | backend/main.py         |
+|               |                             | backend/requirements.txt|
++---------------+-----------------------------+-------------------------+
+| Galang        | ML / Data Engineer          | model/ (pkl, json info) |
+|               |                             | notebook/ *.ipynb       |
++---------------+-----------------------------+-------------------------+
+| Ihqfal        | Frontend UI Engineer        | frontend/app/page.tsx   |
+|               |                             | frontend/app/layout.tsx |
+|               |                             | frontend/app/globals.css|
++---------------+-----------------------------+-------------------------+
+| Suhafdal      | Frontend Integration Eng.   | frontend/app/lib/api.ts |
+|               |                             | frontend/app/lib/types.ts|
+|               |                             | frontend/.env.local     |
++---------------+-----------------------------+-------------------------+
+| Febri         | QA + Docs + FE Support      | frontend/app/components/|
+|               |                             | frontend/scripts/       |
+|               |                             | README / docs           |
++---------------+-----------------------------+-------------------------+
+
+Aturan: TIDAK seorang pun mengedit file milik orang lain tanpa izin
+        pemiliknya + kesepakatan kontrak (Bagian 4).
+
+
+========================================================================
+3. DETAIL PER ORANG
+========================================================================
+
+
+------------------------------------------------------------------------
+ IRSYAD - BACKEND / API ENGINEER
+ Branch milik: feat/irsyad-backend
+ File milik : backend/main.py, backend/requirements.txt
+------------------------------------------------------------------------
+Tujuan:
+  Menyediakan API FastAPI yang melayani permintaan frontend dan menjalankan
+  model untuk memprediksi tarif ongkir serta menandai kebocoran profit.
+
+Tugas Ngoding (menyeluruh):
+  1. Setup & pastikan server FastAPI + CORS berjalan (port 8000).
+  2. Jaga endpoint GET /api/health tetap tersedia.
+  3. Buat model request/response API (Pydantic) sesuai KONTRAK (Bagian 4).
+  4. Buat endpoint POST /api/predict (prediksi tarif ongkir).
+  5. Buat endpoint POST /api/detect-leak (prediksi + flag kebocoran/profit leak).
+  6. Load model dari model/profitleak_final_model_v5.pkl (pakai joblib)
+     satu kali saat startup (bukan tiap request).
+  7. Implement validasi input terhadap valid_ranges dari JSON info:
+     - weight_kg  : 0.05 - 30.0
+     - distance_km: 1.4896 - 3135.7885
+     - volume_cm3 : 352.0 - 244608.0
+     - price      : 4.99 - 2110.0
+  8. Implement logika deteksi memakai threshold = 1.102309 + drift protection.
+  9. Tangani error dengan jelas (400 input tidak valid, 500 error server)
+     dan kembalikan pesan yang bisa ditampilkan frontend.
+ 10. Menjaga requirements.txt sinkron dengan dependency yang dipakai.
+
+Deliverable:
+  - API berjalan; /api/health, /api/predict, /api/detect-leak siap dipakai.
+  - Dokumentasi singkat kontrak endpoint (dibantu Febri).
+
+Definition of Done:
+  - Ketiga endpoint merespons via browser/curl dengan data uji nyata.
+  - Input di luar valid_ranges ditolak dengan 400 + pesan jelas.
+  - Model di-load sekali (tidak re-load per request).
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ GALANG - ML / DATA ENGINEER
+ Branch milik: feat/galang-ml
+ File milik : model/ (pkl + info JSON), notebook/
+------------------------------------------------------------------------
+Tujuan:
+  Memastikan model final valid dan mendefinisikan cara pakainya (fitur,
+  threshold, arti hasil) sehingga backend dan frontend memakai definisi
+  yang sama.
+
+Tugas Ngoding (menyeluruh):
+  1. Verifikasi model final (.pkl) bisa di-load dan menghasilkan prediksi.
+  2. Pastikan urutan fitur sesuai model (weight_kg, distance_km, volume_cm3,
+     price_log) dan bahwa price_log dihitung dari price.
+  3. Dokumentasikan cara menghitung prediksi & residual satu arah.
+  4. Tetapkan aturan keputusan leak:
+     - rasio = actual_rate / predicted_rate
+     - leak jika rasio > threshold (1.102309) dengan normalisasi drift
+       (baseline_median_residual = -0.011977).
+  5. Sediakan fungsi bantu Python (notebook/modul model) untuk memprediksi
+     & menilai leak, agar Irsyad memakainya sebagai rujukan.
+  6. Siapkan data uji contoh (fixture) untuk QA (Febri) & demo.
+  7. Catat metrik (R2 test 0.7227, detection rate, FPR 0.17) untuk docs.
+
+Deliverable:
+  - Notebook/modul berisi fungsi prediksi + deteksi leak yang terbukti jalan.
+  - Contoh input/output (fixture) untuk pengujian.
+  - Catatan definisi fitur, threshold, dan interpretasi hasil.
+
+Definition of Done:
+  - Fungsi prediksi & deteksi menghasilkan output benar untuk data contoh.
+  - Definisi & rumus tersedia sebagai rujukan Irsyad, Ihqfal, Suhafdal, Febri.
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ IHQFAL - FRONTEND UI ENGINEER
+ Branch milik: feat/ihqfal-ui
+ File milik : frontend/app/page.tsx, layout.tsx, globals.css
+------------------------------------------------------------------------
+Tujuan:
+  Membangun seluruh tampilan dashboard ProfitLeak AI yang jelas, rapi, dan
+  mudah dipakai saat demo.
+
+Tugas Ngoding (menyeluruh):
+  1. Ganti halaman default Next.js dengan layout dashboard ProfitLeak AI.
+  2. Ubah metadata di layout.tsx (title "ProfitLeak AI", deskripsi).
+  3. Buat form input sesuai KONTRAK (Bagian 4):
+     - weight_kg, distance_km, volume_cm3, price
+  4. Buat area hasil: tarif prediksi, tarif aktual, rasio/residual, status
+     (aman / terindikasi bocor).
+  5. Buat visualisasi dengan recharts (misal perbandingan aktual vs prediksi,
+     gauge/rasio terhadap threshold).
+  6. Styling responsif Tailwind; tampilan loading & pesan error.
+  7. Gunakan komponen bantu dari Febri (folder components/) untuk bagian
+     berulang. Jangan menulis di folder components/ (itu milik Febri).
+  8. Pastikan tampilan siap demo (rapi, tipografi konsisten, tanpa overflow).
+
+Deliverable:
+  - Dashboard UI lengkap (form + hasil + chart) yang memakai data contoh
+    (mock) sampai integrasi Suhafdal siap.
+
+Definition of Done:
+  - UI tampil rapi di desktop & mobile.
+  - Form + hasil + chart berfungsi dengan data mock.
+  - Siap menerima data asli dari Suhafdal tanpa ubah struktur besar.
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ SUHAFDAL - FRONTEND INTEGRATION ENGINEER
+ Branch milik: feat/suhafdal-integration
+ File milik : frontend/app/lib/api.ts, frontend/app/lib/types.ts,
+              frontend/.env.local
+------------------------------------------------------------------------
+Tujuan:
+  Menghubungkan UI (Ihqfal) ke backend (Irsyad) secara aman dan andal,
+  termasuk tipe data, state, dan penanganan error.
+
+Tugas Ngoding (menyeluruh):
+  1. Pastikan .env.local berisi NEXT_PUBLIC_API_URL=http://localhost:8000.
+  2. Buat frontend/app/lib/api.ts: fungsi checkHealth(), predict(), dan
+     detectLeak() memakai fetch ke backend.
+  3. Buat frontend/app/lib/types.ts: tipe TypeScript request/response sesuai
+     KONTRAK (Bagian 4) supaya Ihqfal & Suhafdal tidak salah data.
+  4. Kelola state di UI: loading, sukses, error, data kosong.
+  5. Tangani error jaringan & 400 dari backend dengan pesan ramah pengguna.
+  6. Sediakan mekanisme mudah menukar mock -> data asli (prop/hook), agar
+     Ihqfal bisa langsung memasangnya.
+  7. Uji manual integrasi: isi form -> panggil backend -> tampilkan hasil.
+
+Deliverable:
+  - Modul api.ts + types.ts siap dipakai.
+  - UI Ihqfal tersambung penuh ke backend Irsyad.
+
+Definition of Done:
+  - Mengisi form memanggil backend dan menampilkan hasil nyata.
+  - Error backend (input invalid) tampil sebagai pesan jelas di UI.
+  - Tipe data konsisten dengan kontrak; tidak ada error TypeScript.
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+------------------------------------------------------------------------
+ FEBRI - QA + DOCS + FRONTEND SUPPORT
+ Branch milik: feat/febri-qa
+ File milik : frontend/app/components/ (baru), frontend/scripts/ (baru),
+              README / docs
+------------------------------------------------------------------------
+Tujuan:
+  Menjaga kualitas & kelengkapan, sekaligus ikut MENULIS KODE: komponen
+  frontend pendukung dan skrip pengujian.
+
+Tugas Ngoding (menyeluruh):
+  1. Buat komponen UI reusable di frontend/app/components/ (mis. Card,
+     StatusBadge, ResultPanel, GaugeChart) yang dipakai Ihqfal.
+  2. Buat skrip uji di frontend/scripts/ (uji koneksi /api/health, uji
+     endpoint prediksi dengan data contoh dari Galang).
+  3. Susun README: cara menjalankan backend & frontend, dependensi,
+     troubleshooting (port, venv, .env.local).
+  4. Dokumentasikan kontrak API (bersama Irsyad) dan cara pakai.
+  5. Uji end-to-end: jalankan dua server -> input -> hasil benar.
+  6. Catat bug, buat daftar perbaikan, verifikasi ulang sebelum demo.
+  7. Siapkan materi demo (ringkasan fitur & alur).
+  CATATAN: Febri TIDAK menulis di file milik Ihqfal / Suhafdal / Irsyad /
+           Galang. Komponen dipakai lewat import, bukan edit file mereka.
+
+Deliverable:
+  - Komponen reusable (dipakai Ihqfal) + skrip uji jalan.
+  - README lengkap + dokumentasi API.
+  - Laporan hasil QA & kesiapan demo.
+
+Definition of Done:
+  - Komponen terpasang & dipakai di dashboard.
+  - Skrip uji berjalan sesuai harapan.
+  - README cukup untuk orang lain menjalankan proyek dari nol.
+  - Sudah di-merge ke develop & tidak menyentuh file di luar area milik.
+
+
+========================================================================
+4. KONTRAK DATA / API (TITIK TEMU - DITULIS IRSYAD + GALANG)
+========================================================================
+Semua perubahan format WAJIB lewat kesepakatan ini dulu.
+
+Request (POST /api/predict dan POST /api/detect-leak):
+{
+  "weight_kg":   0.05..30.0,
+  "distance_km": 1.4896..3135.7885,
+  "volume_cm3":  352.0..244608.0,
+  "price":       4.99..2110.0
+}
+
+Response /api/predict:
+{
+  "predicted_rate": <number>,   // tarif ongkir prediksi (mata uang BRL)
+  "currency": "BRL"
+}
+
+Response /api/detect-leak:
+{
+  "predicted_rate": <number>,
+  "actual_rate":    <number>,      // = price masukan
+  "ratio":          <number>,      // actual / predicted
+  "is_leak":        <boolean>,     // ratio > threshold
+  "threshold":      1.102309,
+  "currency":       "BRL",
+  "message":        "<string penjelas>"
+}
+
+Error (400 / 500):
+{
+  "detail": "<pesan error yang bisa ditampilkan ke pengguna>"
+}
+
+Catatan: field price_log dihitung di backend (log dari price), tidak dikirim user.
+
+
+========================================================================
+5. FASE PROJECT (URUTAN, TANPA JADWAL JAM)
+========================================================================
+Ringkasan urutan pemicu:
+  Fase 1 (Irsyad + Galang) -> Fase 2 (semua paralel) -> Fase 3 (Suhafdal)
+  -> Fase 4 (Febri) -> Fase 5 (semua / merge ke main)
+
+  Yang MEMULAI project lebih dulu = IRSYAD + GALANG (menyusun kontrak).
+
+------------------------------------------------------------------------
+Fase 1 - INISIASI & KONTRAK        (branch: develop)
+  MULAI DARI  : Irsyad + Galang (paling awal).
+  AKTOR       : Irsyad + Galang menulis KONTRAK DATA/API (Bagian 4).
+  SYARAT MASUK: kebijakan tim sudah disepakati.
+  OUTPUT      : Kontrak disetujui semua anggota.
+  PEMICU FASE 2: kontrak selesai & disetujui -> semua boleh mulai Fase 2.
+
+------------------------------------------------------------------------
+Fase 2 - PENGEMBANGAN PARALEL       (branch: masing-masing feat/*)
+  MULAI SETELAH: Fase 1 (kontrak) selesai.
+  AKTOR (jalan BERSAMAAN, tidak saling menunggu):
+    Galang   : finalisasi fungsi prediksi + deteksi + fixture.
+    Irsyad   : bangun endpoint backend sesuai kontrak.
+    Ihqfal   : bangun UI dashboard (pakai mock/data contoh).
+    Suhafdal : bangun api.ts + types.ts sesuai kontrak.
+    Febri    : bangun komponen reusable + skrip uji + README awal.
+  -> Tiap orang bekerja di branch pribadinya, tidak saling menimpa.
+  OUTPUT      : tiap bagian berjalan sendiri-sendiri di branch masing-masing.
+  PEMICU FASE 3: backend (Irsyad) & UI (Ihqfal) sudah bisa dipakai.
+
+------------------------------------------------------------------------
+Fase 3 - INTEGRASI                 (feat/* -> develop)
+  MULAI SETELAH: Fase 2 -> backend + UI + modul api siap.
+  AKTOR UTAMA : Suhafdal (penggerak integrasi).
+    - Suhafdal menyambungkan UI (Ihqfal) ke backend (Irsyad).
+    - Ihqfal memasang komponen dari Febri.
+    - Merge hasil tiap feat/* ke develop setelah review.
+  OUTPUT      : alur form -> backend -> hasil tampil utuh di develop.
+  PEMICU FASE 4: alur utama berjalan end-to-end -> siap diuji.
+
+------------------------------------------------------------------------
+Fase 4 - QA MENYELURUH              (branch: develop)
+  MULAI SETELAH: Fase 3 (integrasi) selesai.
+  AKTOR UTAMA : Febri (pemimpin QA).
+    - Febri uji end-to-end + validasi input + kasus error.
+    - Irsyad/Galang/Ihqfal/Suhafdal memperbaiki temuan di branch
+      masing-masing, lalu merge lagi ke develop.
+  OUTPUT      : tidak ada bug kritis; semua temuan terverifikasi.
+  PEMICU FASE 5: QA lulus -> siap penyelesaian & demo.
+
+------------------------------------------------------------------------
+Fase 5 - PENYELESAIAN & DEMO       (develop -> main)
+  MULAI SETELAH: Fase 4 (QA) lulus.
+  AKTOR       : SEMUA anggota (bersama-sama).
+    - Rapikan UI, finalisasi docs, latihan demo BERSAMA.
+    - Merge develop ke main saat stabil & siap presentasi.
+  OUTPUT      : web selesai & siap didemokan di branch main.
+
+
+========================================================================
+6. ATURAN ANTI-BENTROK
+========================================================================
+1. Satu file = satu pemilik. Edit file orang lain hanya dengan izin.
+2. Perubahan format data/API hanya lewat pembaruan KONTRAK (Bagian 4),
+   disepakati bersama sebelum diterapkan.
+3. Klaim tugas sebelum mulai; kabari tim jika menyentuh area lain.
+4. Komponen bersama (components/) dikelola Febri; pemakaian oleh Ihqfal
+   dikoordinasikan dengan Febri (import, bukan edit).
+5. Commit kecil & sering di branch pribadi; pastikan tidak mengubah file di
+   luar area milik sebelum merge ke develop.
+6. Demo dilakukan bersama; semua anggota berkontribusi.
+
+
+========================================================================
+7. DEMO BERSAMA (PENGERJAAN TETAP KOLABORATIF)
+========================================================================
+Semua anggota hadir & berkontribusi saat demo. Pembagian sorotan:
+  Irsyad   : alur backend & endpoint prediksi/deteksi.
+  Galang   : cara kerja model, threshold, dan arti hasil.
+  Ihqfal   : tampilan dashboard & pengalaman pengguna.
+  Suhafdal : cara data mengalir dari UI ke backend.
+  Febri    : jaminan kualitas, dokumentasi, dan penutup.
+
+Alur demo yang disarankan:
+  1. (Febri)   Buka dengan ringkas: masalah -> solusi.
+  2. (Ihqfal)  Tunjukkan form & dashboard.
+  3. (Suhafdal)Isi form -> tunjukkan data mengalir ke backend.
+  4. (Irsyad)  Tunjukkan hasil endpoint (aman vs terindikasi bocor).
+  5. (Galang)  Jelaskan model, threshold, dan interpretasi.
+  6. (Febri)   Tutup dengan dokumentasi & kesiapan.
+
+========================================================================
+ SELESAI - Pembagian jelas per branch, semua anggota ngoding, demo bersama.
+========================================================================
