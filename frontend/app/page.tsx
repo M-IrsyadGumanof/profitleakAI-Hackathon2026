@@ -5,20 +5,14 @@ import {
   FileSpreadsheet, 
   Gauge, 
   Info, 
-  Layers, 
   ShieldAlert, 
   Sparkles,
-  TrendingDown, 
-  Truck, 
-  Sliders,
-  AlertTriangle,
-  ArrowUpRight,
-  ShieldCheck,
-  Cpu,
-  BarChart3
 } from "lucide-react";
 import { Hero3D } from "./hero-3d";
 import { QuickSimulator } from "./quick-simulator";
+import { InteractiveDetectorTabs } from "./components/interactive-detector-tabs";
+import { InteractiveWorkflow } from "./components/interactive-workflow";
+import { InteractiveFAQ } from "./components/interactive-faq";
 
 export default function HomePage() {
   return (
@@ -127,7 +121,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Bento Grid: Arsitektur Dual-Detector */}
+      {/* 4. Arsitektur Dual-Detector (Tab Interaktif & Komparasi) */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Arsitektur Cerdas</span>
@@ -139,90 +133,10 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Rate Detector */}
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#1E40AF]/40 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-[#E0F2FE]/70 text-[#1E40AF] flex items-center justify-center border border-[#BAE6FD]">
-                  <Truck className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E0F2FE] text-[#1E40AF] border border-[#BAE6FD]">
-                  Regresi Logistik
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold text-slate-900 mt-5">Detektor 1: Tarif Wajar (Rate)</h3>
-              <p className="text-sm text-slate-600 mt-2.5 leading-relaxed">
-                Memprediksi ongkir wajar yang seharusnya dibebankan kurir untuk paket dengan berat, jarak tempuh, volume kubik, dan kepadatan rute tertentu.
-              </p>
-
-              <div className="mt-6 space-y-2.5 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Algoritma:</span>
-                  <span className="font-semibold text-slate-900">HistGradientBoostingRegressor</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Ambang Batas (Threshold):</span>
-                  <span className="font-bold text-rose-600">Rasio Tarif &gt; 3.0978x</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Kode Deteksi:</span>
-                  <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-semibold">
-                    rate_exceeds_fair
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-500">Tindakan Koreksi:</span>
-                  <span className="text-slate-800 text-right font-medium">Negosiasi rute kurir atau ganti ekspedisi</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Margin Detector */}
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-rose-400/40 transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-                  <TrendingDown className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                  Klasifikasi Margin
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold text-slate-900 mt-5">Detektor 2: Risiko Margin (Margin)</h3>
-              <p className="text-sm text-slate-600 mt-2.5 leading-relaxed">
-                Mendeteksi pesanan tidak ekonomis di mana biaya logistik menyerap porsi berlebih (&gt;50%) dari total harga jual barang e-commerce.
-              </p>
-
-              <div className="mt-6 space-y-2.5 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Algoritma:</span>
-                  <span className="font-semibold text-slate-900">HistGradientBoostingClassifier</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Ambang Batas Risiko:</span>
-                  <span className="font-bold text-rose-600">Probabilitas Risiko &ge; 46%</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Kode Deteksi:</span>
-                  <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-semibold">
-                    freight_eats_margin
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-500">Tindakan Koreksi:</span>
-                  <span className="text-slate-800 text-right font-medium">Bundling barang atau minimum belanja</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <InteractiveDetectorTabs />
       </section>
 
-      {/* 5. Cara Pakai dalam 3 Langkah */}
+      {/* 5. Alur Kerja 3 Langkah (Interactive Stepper) */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Alur Kerja Cepat</span>
@@ -234,56 +148,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
-                1
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Siapkan File Transaksi</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Format file CSV dengan kolom standar: berat (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">weight_kg</code>), jarak kirim (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">distance_km</code>), dimensi volume (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">volume_cm3</code>), dan harga produk (<code className="text-xs bg-slate-100 px-1 py-0.5 rounded">price</code>).
-              </p>
-            </div>
-            <div className="mt-5 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
-              Format: Standard UTF-8 CSV (Maksimal 50.000 baris)
-            </div>
-          </div>
-
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
-                2
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Analisis Dual-Engine AI</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Sistem machine learning memproses setiap baris transaksi: memprediksi tarif wajar kurir berdasarkan profil pengiriman, serta menguji apakah ongkir menyerap porsi kritis dari harga barang.
-              </p>
-            </div>
-            <div className="mt-5 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
-              Model: Regresi Tarif & Klasifikasi Risiko Margin
-            </div>
-          </div>
-
-          <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-[#1E40AF] text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
-                3
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Audit & Rekomendasi Solusi</h3>
-              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                Dapatkan dashboard interaktif instan: ringkasan total kebocoran dalam BRL, visualisasi rasio tarif, filter keparahan audit, dan rekomendasi perbaikan spesifik per transaksi.
-              </p>
-            </div>
-            <div className="mt-5 pt-4 border-t border-slate-100 text-xs font-medium text-slate-500">
-              Output: Tabel audit, visualisasi chart, dan aksi remedy
-            </div>
-          </div>
-        </div>
+        <InteractiveWorkflow />
       </section>
 
       {/* 6. Batasan Cakupan Sistem (Transparan & Anti-Blackbox) */}
-      <section className="p-7 sm:p-9 rounded-2xl bg-slate-100/80 border border-slate-200/90">
+      <section className="p-7 sm:p-9 rounded-3xl bg-slate-100/80 border border-slate-200/90">
         <div className="flex items-start gap-4">
           <div className="p-2.5 rounded-xl bg-slate-200 text-slate-700 shrink-0 mt-0.5">
             <Info className="w-5 h-5" />
@@ -304,7 +173,7 @@ export default function HomePage() {
                 <ul className="text-xs text-slate-600 list-disc list-inside mt-2 space-y-1.5">
                   <li>Tarif ongkir aktual yang melebihi ambang batas wajar benchmark rute.</li>
                   <li>Transaksi tidak ekonomis di mana beban ongkir &gt; 50% harga barang.</li>
-                  <li>Kepadatan paket (<code className="bg-slate-100 px-1 py-0.2 rounded">density_g_cm3</code>) dan dimensi volumetrik.</li>
+                  <li>Kepadatan paket (<code className="bg-slate-100 px-1 py-0.2 rounded font-mono">density_g_cm3</code>) dan dimensi volumetrik.</li>
                 </ul>
               </div>
 
@@ -324,25 +193,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Footer Call to Action Banner */}
-      <section className="text-center py-10 border-t border-slate-200 flex flex-col items-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Siap Menguji Data Transaksi Anda?</h2>
-        <p className="text-base text-slate-600 mt-2.5 max-w-xl">
-          Unggah file CSV transaksi Anda atau gunakan dataset sampel 12 baris untuk melihat cara kerja sistem secara langsung.
+      {/* 7. Tanya Jawab Teknis & FAQ Interaktif */}
+      <section className="flex flex-col gap-8">
+        <div className="text-center max-w-2xl mx-auto">
+          <span className="text-xs font-bold text-[#1E40AF] uppercase tracking-wider">Tanya Jawab</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1.5">
+            Pertanyaan yang Sering Diajukan
+          </h2>
+          <p className="text-base text-slate-600 mt-2">
+            Penjelasan teknis dan bisnis seputar operasional Dual-Detector ProfitLeak AI.
+          </p>
+        </div>
+
+        <InteractiveFAQ />
+      </section>
+
+      {/* 8. Footer Call to Action Banner */}
+      <section className="text-center py-12 px-6 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col items-center">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#1E40AF]/20 rounded-full blur-3xl pointer-events-none" />
+        
+        <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight relative z-10">
+          Siap Mengaudit Data Transaksi Logistik Anda?
+        </h2>
+        <p className="text-sm sm:text-base text-slate-300 mt-3 max-w-xl relative z-10 leading-relaxed">
+          Unggah file CSV transaksi Anda atau gunakan dataset sampel 12 baris Olist untuk melihat mitigasi kebocoran profit secara langsung.
         </p>
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5 relative z-10">
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-semibold text-white bg-[#1E40AF] hover:bg-[#1E3A8A] active:bg-[#172554] rounded-xl shadow-md transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Mulai Unggah CSV</span>
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-xs transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl shadow-xs transition-colors"
           >
-            <Gauge className="w-4 h-4 text-slate-500" />
+            <Gauge className="w-4 h-4 text-slate-400" />
             <span>Buka Dashboard Demo</span>
           </Link>
         </div>

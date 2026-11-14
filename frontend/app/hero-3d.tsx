@@ -262,14 +262,17 @@ export function Hero3D() {
 
     // 11. Loop Render WebGL 60FPS
     let animId: number;
-    let clock = new THREE.Clock();
+    let prevTime = performance.now();
+    const startTime = performance.now();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
       if (!isVisible) return;
 
-      const delta = clock.getDelta();
-      const elapsed = clock.getElapsedTime();
+      const now = performance.now();
+      const delta = Math.min(0.1, (now - prevTime) / 1000);
+      const elapsed = (now - startTime) / 1000;
+      prevTime = now;
 
       // Rotasi kontinu anggun
       if (!isDragging) {
