@@ -66,7 +66,8 @@ BACKEND_DIR = Path(__file__).resolve().parent
 load_dotenv(BACKEND_DIR / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+GEMINI_FALLBACK_MODELS = [m for m in [GEMINI_MODEL, "gemini-3.5-flash-lite", "gemini-flash-latest"] if m]
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
@@ -1354,19 +1355,20 @@ async def _advice_call_gemini(context: dict[str, Any]) -> dict[str, Any] | None:
 
     try:
         async with httpx.AsyncClient(timeout=GEMINI_TIMEOUT_SECONDS) as client:
-            response = await client.post(
-                GEMINI_URL,
-                params={"key": GEMINI_API_KEY},
-                json=body,
-            )
-        if response.status_code != 200:
-            return None
-        data = response.json()
-        candidate = (data.get("candidates") or [{}])[0]
-        text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
-        if not text:
-            return None
-        return json.loads(text)
+            for model_name in GEMINI_FALLBACK_MODELS:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+                response = await client.post(
+                    url,
+                    params={"key": GEMINI_API_KEY},
+                    json=body,
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    candidate = (data.get("candidates") or [{}])[0]
+                    text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
+                    if text:
+                        return json.loads(text)
+        return None
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
         # Timeout, koneksi gagal, atau JSON rusak -> fallback rule_based.
         return None
@@ -1473,44 +1475,112 @@ class CopilotChatResponse(BaseModel):
 def _copilot_rule_based_reply(
     message: str, summary: dict[str, Any], rows: list[dict[str, Any]]
 ) -> str:
-    msg = message.lower()
+    msg = message.lower().strip()
     leaks = summary.get("leaks", 0)
     loss = float(summary.get("estimated_loss", 0.0))
     analysed = summary.get("analysed", 0)
+    leak_rate = summary.get("leak_rate", 0.0)
 
-    if any(k in msg for k in ("komplain", "email", "surat", "draf", "draft", "klaim")):
+    # 1. Deteksi Pertanyaan Luar Konteks (Out of Context)
+    out_of_context_indicators = [
+        "resep", "masak", "makanan", "minuman", "cuaca", "hujan", "panas",
+        "presiden", "politik", "pemilu", "menteri", "partai", "dpr", "negara",
+        "film", "bioskop", "aktor", "lagu", "musik", "penyanyi", "lirik", "artis",
+        "game", "gaming", "steam", "playstation", "mobile legends", "ff",
+        "puisi", "pantun", "cerpen", "dongeng", "cerita lucu", "lelucon", "jokes", "tebak",
+        "pacar", "cinta", "zodiak", "horoskop", "ramalan", "jodoh", "bintang",
+        "crypto", "bitcoin", "ethereum", "saham luar", "forex",
+        "coding", "python", "javascript", "react", "html", "css", "sql",
+    ]
+
+    has_logistics_context = any(k in msg for k in [
+        "ongkir", "tarif", "kirim", "ekspedisi", "kurir", "logistik", "paket", "berat",
+        "jarak", "volume", "bocor", "leak", "margin", "harga", "rugi", "profit", "audit",
+        "transaksi", "produk", "jual", "toko", "seller", "customer", "diskon", "bundling",
+        "kemasan", "kardus", "komplain", "klaim", "email", "surat", "draf", "draft", "saran",
+        "rekomendasi", "solusi", "mitigasi", "kenapa", "mengapa", "bagaimana", "baris", "hemat"
+    ])
+
+    if any(term in msg for term in out_of_context_indicators) and not has_logistics_context:
         return (
-            "Berikut draf pesan resmi untuk negosiasi atau komplain ke pihak ekspedisi:\n\n"
-            "**Subjek:** Permohonan Rekonsiliasi & Peninjauan Tarif Pengiriman - Temuan Audit\n\n"
-            "Yth. Tim Kemitraan & Operasional Logistik,\n\n"
-            "Sehubungan dengan audit berkala pengiriman toko kami, sistem ProfitLeak AI mendeteksi "
-            f"adanya selisih ongkir yang signifikan pada beberapa nomor transaksi dengan total kelebihan biaya "
-            f"mencapai **R$ {loss:.2f}**.\n\n"
-            "Beberapa transaksi tercatat dikenakan tarif hingga di atas 2.5x batas wajar pasar. "
-            "Kami memohon agar pihak ekspedisi dapat meninjau kembali skema tarif dan mempertimbangkan "
-            "restitusi atau diskon kemitraan untuk pengiriman selanjutnya.\n\n"
-            "Terima kasih atas perhatian dan kerja samanya.\n\n"
-            "*Hormat kami,*\n*Tim Operasional Toko*"
+            "Maaf, pertanyaan Anda berada **di luar konteks** analisis logistik dan audit kebocoran laba ProfitLeak AI.\n\n"
+            "Saya dirancang khusus sebagai konsultan analitik pengiriman & keuangan toko untuk:\n"
+            "- Mengidentifikasi overcharge tarif ekspedisi di luar batas wajar pasar\n"
+            "- Mendeteksi anomali ongkir yang menggerus margin kotor barang\n"
+            "- Merumuskan strategi bundling, penyesuaian harga, dan draf negosiasi kurir\n\n"
+            "Silakan ajukan pertanyaan atau minta saran terkait data pengiriman dan efisiensi laba toko Anda!"
         )
-    elif any(k in msg for k in ("boros", "terburuk", "termahal", "parah", "bocor")):
+
+    # 2. Draf Komplain / Surat / Negosiasi
+    if any(k in msg for k in ("komplain", "email", "surat", "draf", "draft", "klaim", "negosiasi")):
+        return (
+            "Berikut draf pesan resmi untuk negosiasi atau rekonsiliasi tarif ke pihak mitra ekspedisi:\n\n"
+            "**Subjek:** Permohonan Rekonsiliasi & Peninjauan Skema Tarif Pengiriman - Temuan Audit\n\n"
+            "Yth. Tim Kemitraan & Operasional Logistik Mitra,\n\n"
+            "Berdasarkan hasil audit menyeluruh pada data transaksi toko kami menggunakan sistem ProfitLeak AI, "
+            f"ditemukan **{leaks} nomor transaksi** yang mengalami selisih tarif signifikan di atas rata-rata wajar pasar, "
+            f"dengan estimasi akumulasi selisih mencapai **R$ {loss:.2f}**.\n\n"
+            "Beberapa pengiriman tercatat memiliki rasio biaya hingga > 2.5x tarif wajar model benchmark logistik. "
+            "Sehubungan dengan hal tersebut, kami memohon agar dapat dilakukan peninjauan kembali atas skema tarif rute terkait, "
+            "serta penjajakan diskon volume kemitraan atau penyesuaian tagihan untuk menjaga kelangsungan kerja sama jangka panjang.\n\n"
+            "Kami lampirkan berkas rincian transaksi hasil audit untuk diverifikasi bersama. Terima kasih atas perhatian dan kerja samanya.\n\n"
+            "*Hormat kami,*\n*Tim Finansial & Operasional Toko*"
+        )
+
+    # 3. Transaksi Terburuk / Paling Boros / Anomali Parah
+    if any(k in msg for k in ("boros", "terburuk", "termahal", "parah", "bocor", "paling", "terbesar", "tertinggi")):
         leak_rows = [r for r in rows if r.get("is_leak")]
         if leak_rows:
             worst = max(leak_rows, key=lambda x: float(x.get("ratio", 0)))
+            worst_freight = max(leak_rows, key=lambda x: float(x.get("freight_ratio", 0)))
             return (
-                f"Transaksi dengan kebocoran paling tinggi ada pada **Baris #{worst.get('line', '?')}**:\n\n"
-                f"- **Tarif Aktual Kurir:** R$ {float(worst.get('actual_rate', 0)):.2f}\n"
-                f"- **Estimasi Tarif Wajar:** R$ {float(worst.get('predicted_rate', 0)):.2f}\n"
-                f"- **Rasio Selisih:** {float(worst.get('ratio', 0)):.2f}x lebih mahal\n"
-                f"- **Beban Ongkir:** Menyerap {float(worst.get('freight_ratio', 0)) * 100:.1f}% dari harga jual produk.\n\n"
-                "**Saran Aksi:** Prioritaskan negosiasi rute ini dengan ekspedisi atau tawarkan paket bundling agar margin keuntungan tidak tekor."
+                f"Berdasarkan audit data aktif, berikut transaksi dengan anomali paling signifikan:\n\n"
+                f"1. **Selisih Tarif Tertinggi (Overcharge Ekspedisi): Baris #{worst.get('line', '?')}**\n"
+                f"   - **Tarif Kurir Aktual:** R$ {float(worst.get('actual_rate', 0)):.2f}\n"
+                f"   - **Estimasi Tarif Wajar:** R$ {float(worst.get('predicted_rate', 0)):.2f}\n"
+                f"   - **Rasio Selisih:** **{float(worst.get('ratio', 0)):.2f}x lipat** dari batas normal\n\n"
+                f"2. **Beban Margin Terberat: Baris #{worst_freight.get('line', '?')}**\n"
+                f"   - **Porsi Ongkir thd Harga Barang:** **{float(worst_freight.get('freight_ratio', 0)) * 100:.1f}%**\n"
+                f"   - Kondisi ini menandakan ongkos kirim menyerap hampir seluruh margin keuntungan produk.\n\n"
+                "**Langkah Mitigasi Cepat:**\n"
+                f"- Segera ajukan tiket rekonsiliasi ke ekspedisi untuk rute Baris #{worst.get('line', '?')}.\n"
+                "- Terapkan batas minimum pembelian (minimum order) atau jual secara paket (bundle multipack) pada produk terkait."
             )
+
+    # 4. Strategi Bundling / Harga / Margin Rendah
+    if any(k in msg for k in ("bundle", "bundling", "harga", "margin", "murah", "tekor", "rugi", "minimal", "order")):
+        return (
+            "Berikut panduan **Strategi Bundling & Proteksi Margin** dari ProfitLeak AI:\n\n"
+            "1. **Penerapan Multi-Pack Produk Murah:**\n"
+            "   Produk dengan harga di bawah tarif ongkir wajib dijual dalam paket (misal: isi 2 atau isi 3). "
+            "   Dengan menaikkan total keranjang belanja tanpa menambah berat secara drastis, rasio ongkir terhadap harga akan turun di bawah ambang bahaya (46%).\n\n"
+            "2. **Minimum Order Value (MOV):**\n"
+            "   Tetapkan nilai pesanan minimal jika pembeli ingin mendapatkan subsidi ongkir sebagian, sehingga toko tidak menombok biaya pengiriman.\n\n"
+            "3. **Sistem Co-Sharing Ongkir:**\n"
+            "   Bagi rute jarak jauh (> 1.000 km), hindari promosi gratis ongkir penuh 100%. Terapkan skema subsidi flat, dan selisihnya ditanggung pembeli."
+        )
+
+    # 5. Dimensi Kemasan / Kardus / Volumetrik
+    if any(k in msg for k in ("kemas", "kemasan", "kardus", "kotak", "dimensi", "volume", "volumetrik", "berat")):
+        return (
+            "Berikut panduan **Optimasi Kemasan & Berat Volumetrik**:\n\n"
+            "1. **Pahami Rumus Volumetrik Ekspedisi:**\n"
+            "   Kurir menagih berdasarkan nilai tertinggi antara *berat aktual* vs *berat volumetrik* `(P x L x T / 6000)`.\n\n"
+            "2. **Gunakan Kardus Pas (Snug-Fit):**\n"
+            "   Banyak transaksi terindikasi bocor karena ruang kosong berlebih dalam kardus yang memicu tarif volumetrik tinggi meskipun barangnya ringan.\n\n"
+            "3. **Ganti Bubble Wrap Tebal dengan Box Custom:**\n"
+            "   Gunakan kemasan polymailer berperekat atau kardus lipat tipis untuk produk non-pecah belah guna menekan ukuran kubikasi pengiriman."
+        )
+
+    # 6. Default Saran Strategis Terstruktur
     return (
-        f"Berdasarkan analisis audit saat ini, terdapat **{leaks} dari {analysed} transaksi** yang terindikasi "
-        f"mengalami kebocoran ongkir dengan potensi kerugian sebesar **R$ {loss:.2f}**.\n\n"
-        "**3 Rekomendasi Utama:**\n"
-        "1. **Audit Rute Jarak Jauh:** Negosiasi ulang kontrak pada transaksi dengan rasio selisih > 1.5x.\n"
-        "2. **Strategi Bundling:** Untuk barang murah dengan ongkir tinggi, wajibkan pembelian minimal 2 item.\n"
-        "3. **Kemasan Ramping:** Perkecil dimensi kardus untuk menghindari tarif volumetrik ekspedisi."
+        f"Berdasarkan analisis berkas audit saat ini, terdeteksi **{leaks} dari {analysed} transaksi ({leak_rate}%)** "
+        f"mengalami kebocoran biaya logistik dengan potensi pemulihan margin hingga **R$ {loss:.2f}**.\n\n"
+        "**Rekomendasi Aksi Finansial Toko:**\n"
+        "1. **Audit Kontrak Rute Ekspedisi:** Prioritaskan negosiasi rute pengiriman yang memiliki rasio tagihan kurir > 1.5x tarif wajar.\n"
+        "2. **Mitigasi Margin Produk Murah:** Terapkan bundling paket 2-in-1 atau minimum order agar ongkir tidak melebihi 40% harga jual.\n"
+        "3. **Optimasi Dimensi Kemasan:** Hindari pemborosan volume kardus kosong yang memicu tarif volumetrik tinggi.\n\n"
+        "Anda dapat meminta draf surat komplain ekspedisi, analisis baris terburuk, atau strategi bundling spesifik kepada saya!"
     )
 
 
@@ -1523,21 +1593,33 @@ async def _copilot_call_gemini(
         return None
 
     system_text = (
-        "Anda adalah 'ProfitLeak AI Copilot', konsultan ahli logistik dan audit profit e-commerce.\n"
-        "Tugas Anda: membantu pengguna memahami hasil audit kebocoran ongkir, menganalisis baris transaksi, "
-        "merumuskan rekomendasi mitigasi bisnis (bundling, harga minimal, optimasi kemasan), "
-        "dan menyusun draf surat komplain/negosiasi ke pihak ekspedisi bila diminta.\n\n"
+        "Anda adalah 'ProfitLeak AI Copilot', asisten & konsultan cerdas ahli logistik, audit ongkos kirim, "
+        "dan profitabilitas e-commerce pada platform ProfitLeak.\n\n"
+        "PERAN & KEMAMPUAN UTAMA:\n"
+        "- Menjawab segala pertanyaan dan permintaan saran dari pengguna seputar hasil audit transaksi, "
+        "deteksi kebocoran laba, efisiensi ongkir, negosiasi ekspedisi, perbandingan tarif wajar, strategi harga jual, "
+        "bundling produk, minimum order, hingga optimasi kemasan logistik.\n"
+        "- Fleksibel, cerdas, dan analitis dalam memberikan konsultasi solutif berbasis data audit.\n"
+        "- Menggunakan data konteks audit yang disediakan di bawah ini untuk memberikan jawaban yang akurat, "
+        "spesifik, dan berbasis fakta (jangan mengarang angka yang bertentangan dengan data konteks).\n\n"
+        "ATURAN BATASAN KONTEKS (SANGAT PENTING):\n"
+        "- Fokus dan ranah keahlian Anda HANYA mencakup: logistik, pengiriman barang, tarif kurir/ekspedisi, "
+        "kebocoran margin/profit, strategi e-commerce, dan hasil audit data transaksi pada ProfitLeak.\n"
+        "- JIKA pengguna menanyakan hal yang JELAS DI LUAR KONTEKS tersebut (misalnya: resep masakan, politik, "
+        "tokoh publik/selebriti, olahraga, game, film/lagu, puisi/cerpen, coding/pemrograman umum yang tidak terkait, "
+        "lelucon/obrolan santai yang tidak berhubungan dengan bisnis/logistik), MAKA Anda WAJIB menolak dengan sopan "
+        "dalam 1-2 kalimat berbahasa Indonesia yang ramah, menyatakan bahwa pertanyaan tersebut berada di luar konteks "
+        "analisis logistik & audit kebocoran laba ProfitLeak AI, lalu tawarkan kembali bantuan seputar data audit transaksi mereka.\n\n"
         "DATA KONTEKS AUDIT SAAT INI:\n"
         f"{context_str}\n\n"
         "PANDUAN RESPON:\n"
-        "1. Jawab dalam Bahasa Indonesia yang profesional, ramah, dan solutif.\n"
-        "2. Gunakan data kontekstual yang diberikan. DILARANG mengarang angka baru yang tidak ada.\n"
-        "3. Format teks menggunakan Markdown (gunakan bold, bullet points, atau kutipan) agar rapi dan enak dibaca.\n"
-        "4. Berikan jawaban yang padat, terstruktur, dan actionable."
+        "1. Berbahasa Indonesia yang profesional, jelas, ramah, dan solutif.\n"
+        "2. Format menggunakan Markdown yang rapi (bold, bullet points, atau tabel jika diperlukan).\n"
+        "3. Berikan saran yang actionable dan mudah diterapkan oleh tim operasional e-commerce."
     )
 
     contents = []
-    for h in history[-6:]:
+    for h in history[-8:]:
         role = "user" if h.role == "user" else "model"
         contents.append({"role": role, "parts": [{"text": h.content}]})
 
@@ -1548,23 +1630,28 @@ async def _copilot_call_gemini(
         "contents": contents,
         "generationConfig": {
             "temperature": 0.4,
-            "maxOutputTokens": 1000,
+            "maxOutputTokens": 1200,
         },
     }
 
     try:
         async with httpx.AsyncClient(timeout=25.0) as client:
-            resp = await client.post(
-                GEMINI_URL,
-                params={"key": GEMINI_API_KEY},
-                json=body,
-            )
-        if resp.status_code != 200:
-            return None
-        data = resp.json()
-        candidate = (data.get("candidates") or [{}])[0]
-        text = (candidate.get("content") or {}).get("parts", [{}])[0].get("text")
-        return text if text else None
+            for m in GEMINI_FALLBACK_MODELS:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent"
+                resp = await client.post(
+                    url,
+                    params={"key": GEMINI_API_KEY},
+                    json=body,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidate = (data.get("candidates") or [{}])[0]
+                    parts = (candidate.get("content") or {}).get("parts", [{}])
+                    for part in parts:
+                        text = part.get("text")
+                        if text:
+                            return text
+        return None
     except Exception:
         return None
 
@@ -1575,13 +1662,32 @@ async def copilot_chat(payload: CopilotChatRequest) -> CopilotChatResponse:
     summary = payload.summary or {}
     leak_rows = [r for r in payload.rows if r.get("is_leak")]
     leak_rows.sort(key=lambda r: float(r.get("ratio", 0)), reverse=True)
-    top_rows = leak_rows[:5]
+    top_rows = leak_rows[:10]
 
     context_str = json.dumps(
         {
-            "file": payload.filename,
-            "ringkasan_audit": summary,
-            "transaksi_bocor_terburuk": top_rows,
+            "nama_berkas": payload.filename or "transaksi.csv",
+            "ringkasan_audit": {
+                "total_transaksi": summary.get("analysed", len(payload.rows)),
+                "transaksi_bocor": summary.get("leaks", len(leak_rows)),
+                "persentase_kebocoran": f"{summary.get('leak_rate', 0)}%",
+                "estimasi_kerugian_ongkir_brl": summary.get("estimated_loss", 0),
+                "rincian_penyebab": {
+                    "overcharge_ekspedisi": summary.get("rate_leaks", 0),
+                    "ongkir_menggerus_margin": summary.get("margin_risks", 0),
+                },
+            },
+            "sampel_transaksi_kebocoran_terburuk": [
+                {
+                    "baris": r.get("line"),
+                    "tarif_aktual_kurir_brl": r.get("actual_rate"),
+                    "tarif_wajar_model_brl": r.get("predicted_rate"),
+                    "rasio_kemahalan": f"{float(r.get('ratio', 1)):.2f}x",
+                    "porsi_ongkir_terhadap_harga": f"{float(r.get('freight_ratio', 0)) * 100:.1f}%",
+                    "alasan_deteksi": [reason.get("detail") for reason in r.get("reasons", [])],
+                }
+                for r in top_rows
+            ],
         },
         ensure_ascii=False,
         indent=2,

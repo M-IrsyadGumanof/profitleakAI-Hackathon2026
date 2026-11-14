@@ -209,7 +209,7 @@ export function CopilotWidget({ summary, rows, filename }: CopilotWidgetProps) {
                     >
                       <span>{msg.time}</span>
                       {msg.source === "gemini" && !isUser && (
-                        <span className="font-semibold text-indigo-500">• Gemini 2.0</span>
+                        <span className="font-semibold text-indigo-500">• Gemini AI</span>
                       )}
                     </div>
                   </div>
@@ -242,7 +242,7 @@ export function CopilotWidget({ summary, rows, filename }: CopilotWidgetProps) {
                   handleSend();
                 }
               }}
-              placeholder="Tanya seputar data audit ongkir..."
+              placeholder="Tanya apa saja seputar audit, saran mitigasi, atau negosiasi..."
               disabled={loading}
               className="flex-1 bg-slate-50 dark:bg-zinc-800/80 text-slate-900 dark:text-zinc-100 text-xs sm:text-sm rounded-xl px-3 py-2.5 border border-slate-200 dark:border-zinc-700 focus:outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
             />
