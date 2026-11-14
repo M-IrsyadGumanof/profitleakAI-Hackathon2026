@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { LiquidCanvas } from "./liquid-canvas";
 import { 
   AlertCircle, 
   ArrowRight, 
@@ -354,7 +355,7 @@ export default function UploadPage() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
+        className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
           isDragging
             ? "border-blue-500 bg-blue-50/50 scale-[1.005]"
             : file
@@ -362,6 +363,9 @@ export default function UploadPage() {
             : "border-slate-300 hover:border-slate-400 bg-white"
         }`}
       >
+        {/* Interactive Liquid Wave Effect (Netlify Style) */}
+        <LiquidCanvas isHovering={isDragging} />
+
         <input
           ref={fileInputRef}
           type="file"
@@ -374,7 +378,7 @@ export default function UploadPage() {
           }}
         />
 
-        <div className="flex flex-col items-center justify-center gap-3">
+        <div className="relative z-10 flex flex-col items-center justify-center gap-3">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
               file ? "bg-emerald-100 text-emerald-600" : "bg-blue-50 text-blue-600"
