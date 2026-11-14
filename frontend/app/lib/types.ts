@@ -1,26 +1,28 @@
 /**
  * ========================================================================
- * ProfitLeak AI - TypeScript Type Definitions & API Contracts
+ * ProfitLeak AI - TypeScript Type Definitions & API Contracts (v6 Multi-Detector)
  * Owner: Suhafdal (Frontend Integration Engineer)
- * Branch: feat/suhafdal-integration / suhafdal
- * Rujukan: Kontrak API Bagian 4 & Rancangan Database ERD
+ * Branch: suhafdal
+ * Rujukan: Kontrak API Bagian 5 (pembagian_tim_5_orang.txt) & backend/main.py
  * ========================================================================
  */
 
 // ------------------------------------------------------------------------
-// 1. BATASAN VALIDASI INPUT MODEL v5 (VALID RANGES)
+// 1. KONFIGURASI MODEL & BATASAN VALIDASI (VALID RANGES)
 // ------------------------------------------------------------------------
 export const MODEL_CONFIG = {
-  VERSION: "v5",
+  VERSION: "v6",
   CURRENCY: "BRL",
-  THRESHOLD: 1.102309,
-  BASELINE_MEDIAN_RESIDUAL: -0.011977,
+  DEFAULT_THRESHOLD: 3.09779,
+  MARGIN_THRESHOLD: 0.8808,
+  MARGIN_PROBA_THRESHOLD: 0.46,
+  MAX_CSV_ROWS: 50000,
   RANGES: {
     weight_kg: {
       min: 0.05,
       max: 30.0,
       unit: "kg",
-      label: "Berat Produk",
+      label: "Berat Paket",
       step: 0.01,
     },
     distance_km: {
@@ -34,14 +36,14 @@ export const MODEL_CONFIG = {
       min: 352.0,
       max: 244608.0,
       unit: "cm³",
-      label: "Volume Produk",
+      label: "Volume Paket",
       step: 1,
     },
     price: {
       min: 4.99,
       max: 2110.0,
       unit: "BRL",
-      label: "Harga Barang / Tarif Dasar",
+      label: "Harga Barang",
       step: 0.01,
     },
   },
@@ -49,13 +51,29 @@ export const MODEL_CONFIG = {
 
 // ------------------------------------------------------------------------
 // 2. KONTRAK REQUEST PAYLOAD
-// Dipakai oleh: POST /api/predict dan POST /api/detect-leak
 // ------------------------------------------------------------------------
-export interface PredictPayload {
-  weight_kg: number;   // 0.05 .. 30.0 kg
-  distance_km: number; // 1.4896 .. 3135.7885 km
-  volume_cm3: number;  // 352.0 .. 244608.0 cm3
-  price: number;       // 4.99 .. 2110.0 BRL
+
+/** Payload dasar untuk POST /api/predict (4 wajib, 4 opsional untuk v6 density) */
+export interface PredictionRequest {
+  weight_kg: number;          // 0.05 .. 30.0 kg
+  distance_km: number;        // 1.4896 .. 3135.7885 km
+  volume_cm3: number;         // 352.0 .. 244608.0 cm³
+  price: number;              // 4.99 .. 2110.0 BRL
+
+  // Opsional (untuk kalkulasi kepadatan density_g_cm3 di backend v6)
+  product_weight_g?: number;
+  length_cm?: number;
+  height_cm?: number;
+  width_cm?: number;
+}
+
+// Alias untuk kompatibilitas
+export type PredictPayload = PredictionRequest;
+
+/** Payload untuk POST /api/detect-leak */
+export interface LeakDetectionRequest extends PredictionRequest {
+  /** Tarif ongkir aktual (bila kosong, backend memakai nilai price) */
+  actual_rate?: number;
 }
 
 // ------------------------------------------------------------------------
@@ -69,30 +87,122 @@ export interface HealthResponse {
   version: string;
 }
 
+/** Response dari GET /api/model-info */
+export interface ModelInfoResponse {
+  info: Record<string, unknown>;
+  threshold: number;
+  margin_threshold: number;
+  margin_proba_threshold: number;
+  detectors: string[];
+  scope: {
+    covered: string[];
+    not_covered: string[];
+    reason: string;
+  };
+  valid_ranges: Record<string, [number, number]>;
+  rate_features: string[];
+  required_inputs: string[];
+  optional_inputs: string[];
+}
+
 /** Response dari POST /api/predict */
 export interface PredictResponse {
   predicted_rate: number;
   currency: string; // "BRL"
 }
 
-/** Response dari POST /api/detect-leak */
-export interface DetectLeakResponse {
-  predicted_rate: number; // Tarif ongkir prediksi dari model
-  actual_rate: number;    // Tarif aktual / masukan price
-  ratio: number;          // actual_rate / predicted_rate
-  is_leak: boolean;       // true jika ratio > threshold (1.102309)
-  threshold: number;      // 1.102309
-  currency: string;       // "BRL"
-  message: string;        // Penjelasan status (misal: "Aman" / "Terindikasi Bocor")
+export interface LeakReason {
+  code: "rate_exceeds_fair" | "freight_eats_margin" | string;
+  severity: "high" | "medium" | string;
+  detail: string;
+  remedy: string;
 }
 
-/** Format Standar Error Response dari FastAPI (400 / 422 / 500) */
+/** Response dari POST /api/detect-leak (v6 Multi-Detector) */
+export interface DetectLeakResponse {
+  predicted_rate: number;
+  actual_rate: number;
+  ratio: number;
+  is_leak: boolean;
+  threshold: number;
+  currency: string;
+  message: string;
+
+  // v6 Multi-faktor & Analisis Risiko
+  risk_score: number;
+  freight_ratio: number;
+  margin_risk_probability: number;
+  detectors: {
+    rate: boolean;   // Tarif aktual > ambang wajar
+    margin: boolean; // Transaksi tidak ekonomis (ongkir menyerap margin)
+  };
+  reasons: LeakReason[];
+}
+
+// Alias untuk kemudahan
+export type LeakDetectionResponse = DetectLeakResponse;
+
+// ------------------------------------------------------------------------
+// 4. KONTRAK RESPONSE POST /api/upload-csv
+// ------------------------------------------------------------------------
+
+export interface CsvUploadSummary {
+  total_rows: number;
+  analysed: number;
+  skipped: number;
+  leaks: number;
+  rate_leaks: number;
+  margin_risks: number;
+  estimated_loss: number;
+  leak_rate: number;
+}
+
+export interface CsvRecommendation {
+  code: string;
+  count: number;
+  recommendation: string;
+}
+
+export interface CsvRowResult {
+  line: number;
+  predicted_rate: number;
+  actual_rate: number;
+  ratio: number;
+  freight_ratio: number;
+  margin_risk_probability: number;
+  is_leak: boolean;
+  risk_score: number;
+  detectors: {
+    rate: boolean;
+    margin: boolean;
+  };
+  reasons: LeakReason[];
+}
+
+export interface CsvSkippedRow {
+  line: number;
+  reason: string;
+}
+
+export interface UploadCsvResponse {
+  filename: string;
+  currency: string;
+  threshold: number;
+  margin_threshold: number;
+  summary: CsvUploadSummary;
+  reason_breakdown: Record<string, number>;
+  recommendations: CsvRecommendation[];
+  rows: CsvRowResult[];
+  skipped: CsvSkippedRow[];
+}
+
+/** Format Standar Error Response dari FastAPI */
 export interface ApiErrorResponse {
   detail: string | { loc: string[]; msg: string; type: string }[];
 }
 
 // ------------------------------------------------------------------------
-// 4. TIPE BANTU STATE UI (Untuk mempermudah Ihqfal di page.tsx)
+// 5. TIPE BANTU STATE UI (Untuk mempermudah Ihqfal di page.tsx & components)
 // ------------------------------------------------------------------------
 export interface ApiState<T> {
   data: T | null;
@@ -102,12 +212,11 @@ export interface ApiState<T> {
 
 export interface ValidationResult {
   isValid: boolean;
-  errors: Partial<Record<keyof PredictPayload, string>>;
+  errors: Partial<Record<keyof PredictionRequest | "actual_rate", string>>;
 }
 
 // ------------------------------------------------------------------------
-// 5. TIPE ENTITAS DATABASE (Sesuai ERD & DDL PostgreSQL)
-// Berguna untuk representasi data riwayat, tabel transaksi, atau integrasi DB
+// 6. TIPE ENTITAS DATABASE (Sesuai ERD & DDL PostgreSQL)
 // ------------------------------------------------------------------------
 export interface CustomerEntity {
   customer_id: string; // CHAR(32)
