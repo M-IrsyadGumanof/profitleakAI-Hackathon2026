@@ -785,9 +785,9 @@ export default function ProfitLeakDashboard() {
         </div>
       </main>
 
-      {/* Footer Bersih */}
+      {/* Footer Tim */}
       <footer className="mt-8 border-t border-slate-800/80 bg-[#080c16] py-4 text-center text-[11px] text-slate-400">
-        ProfitLeak AI • Tim 5 Orang Hackathon 2026 • Area UI Ihqfal (branch: ihqfal)
+        ProfitLeak AI © 2026 • Dikembangkan oleh Tim KOMEM • Hackathon 2026
       </footer>
     </div>
   );
