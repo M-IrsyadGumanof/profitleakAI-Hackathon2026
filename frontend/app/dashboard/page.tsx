@@ -492,7 +492,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("overview")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "overview"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-emerald-600 border-b-2 border-emerald-600"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -502,7 +502,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("table")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "table"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-emerald-600 border-b-2 border-emerald-600"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -512,7 +512,7 @@ export default function DashboardPage() {
           onClick={() => setActiveTab("simulator")}
           className={`pb-3 text-sm font-semibold transition-colors relative ${
             activeTab === "simulator"
-              ? "text-blue-600 border-b-2 border-blue-600"
+              ? "text-emerald-600 border-b-2 border-emerald-600"
               : "text-slate-500 hover:text-slate-800"
           }`}
         >

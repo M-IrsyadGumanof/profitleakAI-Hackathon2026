@@ -21,15 +21,15 @@ export default function HomePage() {
       {/* 1. Hero Section (Antigravity Google Style) */}
       <section className="flex flex-col items-center text-center max-w-4xl mx-auto pt-4">
         {/* Eyebrow Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-semibold shadow-xs mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-semibold shadow-xs mb-6">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
           <span>Dual-Detector Logistics Margin Intelligence</span>
         </div>
 
         {/* Hero Headline */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08]">
           Hentikan Kebocoran Margin Logistik E-Commerce dengan{" "}
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
             Dual-Detector AI
           </span>
         </h1>
@@ -43,9 +43,9 @@ export default function HomePage() {
         <div className="mt-8 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto justify-center">
           <Link
             href="/upload"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md hover:shadow-lg transition-all"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md hover:shadow-lg transition-all"
           >
-            <FileSpreadsheet className="w-5 h-5 text-blue-100" />
+            <FileSpreadsheet className="w-5 h-5 text-emerald-100" />
             <span>Unggah Dataset Transaksi (CSV)</span>
             <ArrowRight className="w-4 h-4 ml-0.5" />
           </Link>
@@ -128,7 +128,7 @@ export default function HomePage() {
           </div>
           <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Akurasi Tarif</span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-blue-600 mt-1 block">R² 73.49%</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1 block">R² 73.49%</span>
             <span className="text-xs text-slate-500">HistGradientBoosting</span>
           </div>
           <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs text-left">
@@ -147,7 +147,7 @@ export default function HomePage() {
       {/* 2. Bento Grid: Arsitektur Dual-Detector */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Arsitektur Cerdas</span>
+          <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Arsitektur Cerdas</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1.5">
             Dua Detektor Terpadu: Menutup Dua Celah Finansial
           </h2>
@@ -161,10 +161,10 @@ export default function HomePage() {
           <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                   <Truck className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   Regresi Logistik
                 </span>
               </div>
@@ -242,7 +242,7 @@ export default function HomePage() {
       {/* 3. Cara Pakai dalam 3 Langkah */}
       <section className="flex flex-col gap-8">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Alur Kerja Cepat</span>
+          <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Alur Kerja Cepat</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1.5">
             Mulai Audit Finansial dalam 3 Langkah
           </h2>
@@ -254,7 +254,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
                 1
               </div>
               <h3 className="text-lg font-bold text-slate-900">Siapkan File Transaksi</h3>
@@ -269,7 +269,7 @@ export default function HomePage() {
 
           <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
                 2
               </div>
               <h3 className="text-lg font-bold text-slate-900">Analisis Dual-Engine AI</h3>
@@ -284,7 +284,7 @@ export default function HomePage() {
 
           <div className="p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-base shadow-xs mb-5">
                 3
               </div>
               <h3 className="text-lg font-bold text-slate-900">Audit & Rekomendasi Solusi</h3>
@@ -350,7 +350,7 @@ export default function HomePage() {
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3.5">
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Mulai Unggah CSV</span>

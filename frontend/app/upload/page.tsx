@@ -358,13 +358,13 @@ export default function UploadPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
           isDragging
-            ? "border-blue-500 bg-blue-50/80 shadow-lg shadow-blue-500/10 scale-[1.005]"
+            ? "border-emerald-400 shadow-xl shadow-emerald-500/20 scale-[1.005]"
             : file
-            ? "border-emerald-400 bg-emerald-50/40 shadow-sm"
-            : "border-slate-300 hover:border-blue-400 bg-gradient-to-b from-blue-50/30 via-white to-slate-50/40 shadow-xs hover:shadow-sm"
+            ? "border-emerald-400/80 shadow-lg shadow-emerald-500/10"
+            : "border-slate-700/80 hover:border-emerald-400/80 shadow-lg shadow-slate-900/10"
         }`}
       >
-        {/* Interactive Netlify Aurora + Liquid Shader (Harmonized with UI) */}
+        {/* Interactive Netlify Aurora + Liquid Shader */}
         <LiquidCanvas isDragging={isDragging} />
 
         <input
@@ -381,20 +381,20 @@ export default function UploadPage() {
 
         <div className="relative z-10 flex flex-col items-center justify-center gap-3">
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors shadow-xs ${
+            className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
               file
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : "bg-blue-50 text-blue-600 border border-blue-200/80"
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-400/30"
+                : "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shadow-inner"
             }`}
           >
             {file ? <CheckCircle2 className="w-7 h-7" /> : <UploadCloud className="w-7 h-7" />}
           </div>
 
           <div>
-            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            <h3 className="text-base font-bold text-white tracking-wide drop-shadow-sm">
               {file ? file.name : "Tarik & lepaskan file CSV Anda ke sini"}
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-300 mt-1 drop-shadow-sm">
               {file
                 ? `Ukuran file: ${(file.size / 1024).toFixed(1)} KB • Siap diproses`
                 : "atau klik untuk memilih file dari komputer Anda (Maksimal 50.000 baris)"}
@@ -404,9 +404,9 @@ export default function UploadPage() {
           {!file && (
             <button
               type="button"
-              className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-all shadow-xs"
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 active:bg-white/25 rounded-xl border border-white/20 backdrop-blur-md transition-all shadow-sm"
             >
-              <FileSpreadsheet className="w-4 h-4 text-blue-100" />
+              <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
               Pilih Dokumen CSV
             </button>
           )}
@@ -417,14 +417,14 @@ export default function UploadPage() {
       {!file && (
         <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="text-xs text-slate-700">
               Ingin uji coba cepat tanpa menyiapkan file CSV sendiri?
             </span>
           </div>
           <button
             onClick={handleLoadDemoDataset}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded-md shadow-xs transition-colors shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-200 rounded-md shadow-xs transition-colors shrink-0"
           >
             Gunakan Data Sampel (12 Baris)
           </button>
@@ -436,7 +436,7 @@ export default function UploadPage() {
         <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-blue-600" />
+              <FileText className="w-5 h-5 text-emerald-600" />
               <div>
                 <h4 className="text-sm font-bold text-slate-900">{file.name}</h4>
                 <span className="text-xs text-slate-500">
@@ -471,7 +471,7 @@ export default function UploadPage() {
             <button
               onClick={handleSubmitAnalysis}
               disabled={isLoading}
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <>
@@ -492,7 +492,7 @@ export default function UploadPage() {
       {/* Petunjuk Format Kolom */}
       <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-blue-600" />
+          <HelpCircle className="w-4 h-4 text-emerald-600" />
           Spesifikasi Format Kolom CSV
         </h3>
 

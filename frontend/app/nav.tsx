@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
 export function Navbar() {
@@ -11,8 +11,15 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 20);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     handleScroll();
@@ -28,64 +35,54 @@ export function Navbar() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 pt-2.5 sm:pt-3">
-      <motion.header
-        initial={false}
-        animate={{
-          maxWidth: isScrolled ? "54rem" : "80rem",
-          height: isScrolled ? "3.25rem" : "4rem",
-          borderRadius: isScrolled ? "9999px" : "1rem",
-          backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.88)" : "rgba(255, 255, 255, 0.96)",
-          boxShadow: isScrolled
-            ? "0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)"
-            : "0 1px 3px 0 rgba(15, 23, 42, 0.05)",
-          borderColor: isScrolled ? "rgba(226, 232, 240, 0.95)" : "rgba(226, 232, 240, 0.75)",
-        }}
-        transition={{
-          duration: 0.45,
-          ease: [0.16, 1, 0.3, 1], // DeepSeek / Apple cinematic spring-like easeOut
-        }}
-        className="pointer-events-auto w-full px-4 sm:px-6 flex items-center border backdrop-blur-md"
+      {/* DeepSeek Smooth Floating Island Header (Hardware-Accelerated CSS Transition) */}
+      <header
+        className={`pointer-events-auto w-full flex items-center justify-between border backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isScrolled
+            ? "max-w-4xl h-12 sm:h-13 px-4 sm:px-6 rounded-full bg-white/90 border-slate-200/90 shadow-lg shadow-slate-900/5"
+            : "max-w-7xl h-16 px-4 sm:px-8 rounded-2xl bg-white/95 border-slate-200/80 shadow-xs"
+        }`}
       >
         <div className="flex items-center justify-between w-full gap-2">
-          {/* Kolom Kiri: Brand Logo dengan Morfisme Anthropic (ProfitLeak AI -> PL AI) */}
+          {/* Kolom Kiri: Brand Logo Resmi dengan Morfisme Ringan Gaya Anthropic */}
           <div className="flex items-center justify-start flex-1 min-w-0">
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-xs group-hover:bg-blue-700 transition-colors shrink-0">
-                PL
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
+              {/* Ikon Mark Resmi (Daun + Droplet + Box Logistik) */}
+              <div className="w-8 h-8 relative shrink-0">
+                <Image
+                  src="/logo-mark.svg"
+                  alt="ProfitLeak AI Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain"
+                  priority
+                />
               </div>
 
+              {/* Teks Merek (Morfisme Otomatis saat Scrolled tanpa Lag) */}
               <div className="flex items-center overflow-hidden">
-                <motion.div
-                  initial={false}
-                  animate={{
-                    width: isScrolled ? "0px" : "auto",
-                    opacity: isScrolled ? 0 : 1,
-                    marginRight: isScrolled ? "0px" : "4px",
-                  }}
-                  transition={{
-                    duration: 0.38,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className="overflow-hidden whitespace-nowrap flex flex-col"
+                <div
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    isScrolled
+                      ? "max-w-0 opacity-0 -translate-x-2"
+                      : "max-w-[200px] opacity-100 translate-x-0 mr-1"
+                  }`}
                 >
-                  <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
-                    ProfitLeak
+                  <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors">
+                    Profit<span className="text-slate-600 font-semibold">Leak</span>
                   </span>
-                  <span className="text-[10px] text-slate-400 leading-none hidden sm:block">
-                    Logistics Margin Intelligence
-                  </span>
-                </motion.div>
+                </div>
 
-                <span className="font-black text-sm tracking-tight text-blue-600 shrink-0">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-emerald-600 shrink-0">
                   AI
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Kolom Tengah: 3 Tombol Navigasi Presisi Terpusat (Tanpa Jitter) */}
+          {/* Kolom Tengah: 3 Tombol Navigasi Presisi Terkunci (Kontras Tinggi, Zero-Lag) */}
           <div className="flex items-center justify-center shrink-0">
-            <nav className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-full border border-slate-200/80 shadow-xs">
+            <nav className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200/80 shadow-xs">
               {navItems.map((item) => {
                 const isActive =
                   item.href === "/"
@@ -96,35 +93,26 @@ export function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative px-3.5 sm:px-4 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 whitespace-nowrap ${
-                      isActive ? "text-white font-bold" : "text-slate-600 hover:text-slate-900"
+                    className={`px-3.5 sm:px-4 py-1.5 text-xs rounded-full transition-all duration-150 whitespace-nowrap ${
+                      isActive
+                        ? "bg-emerald-600 text-white font-bold shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-medium"
                     }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-nav-indicator"
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 32,
-                        }}
-                        className="absolute inset-0 bg-blue-600 rounded-full shadow-xs -z-10"
-                      />
-                    )}
-                    <span className="relative z-10">{item.label}</span>
+                    {item.label}
                   </Link>
                 );
               })}
             </nav>
           </div>
 
-          {/* Kolom Kanan: Call to Action Seimbang */}
+          {/* Kolom Kanan: Call to Action Simetris */}
           <div className="flex items-center justify-end flex-1 min-w-0">
             <Link
               href="/upload"
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 shrink-0 ${
                 isScrolled
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
                   : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-xs"
               }`}
             >
@@ -134,7 +122,7 @@ export function Navbar() {
             </Link>
           </div>
         </div>
-      </motion.header>
+      </header>
     </div>
   );
 }
