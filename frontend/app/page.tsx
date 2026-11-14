@@ -294,12 +294,12 @@ export default function ProfitLeakDashboard() {
       {
         name: "Tarif Wajar (AI)",
         amount: result.predictedRate,
-        fill: "hsl(var(--foreground))",
+        fill: "#3b82f6", // Biru cerah yang jelas
       },
       {
         name: "Ongkir Ditagihkan",
         amount: result.actualRate,
-        fill: result.isLeak ? "hsl(var(--destructive))" : "hsl(var(--muted-foreground))",
+        fill: result.isLeak ? "#ef4444" : "#64748b", // Merah jika anomali, Slate jika normal
       },
     ];
   }, [result]);
@@ -712,32 +712,34 @@ export default function ProfitLeakDashboard() {
                         <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                           <XAxis
                             dataKey="name"
-                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                            axisLine={{ stroke: "hsl(var(--border))" }}
+                            tick={{ fill: "#94a3b8", fontSize: 11 }}
+                            axisLine={{ stroke: "#334155" }}
                             tickLine={false}
                           />
                           <YAxis
-                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                            axisLine={{ stroke: "hsl(var(--border))" }}
+                            tick={{ fill: "#64748b", fontSize: 10 }}
+                            axisLine={{ stroke: "#334155" }}
                             tickLine={false}
                             unit=" R$"
                           />
                           <Tooltip
-                            cursor={{ fill: "hsl(var(--muted) / 0.5)", radius: 6 }}
+                            cursor={{ fill: "rgba(255, 255, 255, 0.04)", radius: 6 }}
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 const item = payload[0];
                                 const isActual = item.payload.name === "Ongkir Ditagihkan";
                                 return (
-                                  <div className="rounded-lg border bg-popover text-popover-foreground px-3 py-2 text-xs shadow-md font-sans">
-                                    <div className="font-semibold">{item.payload.name}</div>
+                                  <div className="rounded-lg border border-slate-700 bg-slate-900 text-slate-100 px-3 py-2 text-xs shadow-xl font-sans">
+                                    <div className="font-semibold text-white">{item.payload.name}</div>
                                     <div className="mt-1 flex items-center gap-1.5">
-                                      <span className="text-muted-foreground">Nilai:</span>
+                                      <span className="text-slate-400">Nilai:</span>
                                       <span
                                         className={`font-mono font-bold ${
                                           isActual && result.isLeak
-                                            ? "text-destructive"
-                                            : "text-foreground"
+                                            ? "text-red-400"
+                                            : isActual
+                                            ? "text-slate-200"
+                                            : "text-blue-400"
                                         }`}
                                       >
                                         R$ {Number(item.value).toFixed(2)} BRL
@@ -751,11 +753,11 @@ export default function ProfitLeakDashboard() {
                           />
                           <ReferenceLine
                             y={result.predictedRate}
-                            stroke="hsl(var(--foreground))"
+                            stroke="#38bdf8"
                             strokeDasharray="3 3"
                             label={{
                               value: "Batas Wajar",
-                              fill: "hsl(var(--muted-foreground))",
+                              fill: "#38bdf8",
                               position: "insideTopRight",
                               fontSize: 10,
                             }}
