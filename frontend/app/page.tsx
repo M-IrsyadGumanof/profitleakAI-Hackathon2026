@@ -4,22 +4,17 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
-  Truck,
   Scale,
   Maximize2,
   Navigation,
   DollarSign,
-  TrendingUp,
   AlertTriangle,
-  Sparkles,
-  Info,
   CheckCircle2,
   BarChart3,
   RefreshCw,
   Sliders,
-  ChevronRight,
-  ArrowUpRight,
-  Zap,
+  ArrowRight,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -44,13 +39,12 @@ const VALID_RANGES = {
 const THRESHOLD = 1.102309;
 const BASELINE_MEDIAN_RESIDUAL = -0.011977;
 
-// Preset Skenario Cepat untuk Demo
+// Preset Skenario Demo (Minimalis)
 const PRESET_SCENARIOS = [
   {
     id: "normal",
     name: "Transaksi Normal",
-    badge: "Tarif Wajar",
-    desc: "Barang ringan 0.8kg rute 120km",
+    badge: "Wajar",
     weight: 0.8,
     distance: 120,
     length: 20,
@@ -58,13 +52,11 @@ const PRESET_SCENARIOS = [
     height: 8,
     price: 49.9,
     actualFreight: 14.5,
-    theme: "emerald",
   },
   {
     id: "leak-high",
     name: "Kebocoran Ekstrem",
     badge: "Bocor 5x",
-    desc: "Barang 0.5kg rute 85km ongkir digelembungkan",
     weight: 0.5,
     distance: 85,
     length: 15,
@@ -72,13 +64,11 @@ const PRESET_SCENARIOS = [
     height: 10,
     price: 39.0,
     actualFreight: 78.5,
-    theme: "red",
   },
   {
     id: "heavy-valid",
     name: "Kargo Berat Jauh",
-    badge: "Wajar Valid",
-    desc: "Barang 15kg rute 1.820km (ongkir tinggi tapi wajar)",
+    badge: "Wajar",
     weight: 15.0,
     distance: 1820,
     length: 50,
@@ -86,13 +76,11 @@ const PRESET_SCENARIOS = [
     height: 25,
     price: 450.0,
     actualFreight: 115.0,
-    theme: "blue",
   },
   {
     id: "leak-mild",
     name: "Markup Logistik",
     badge: "Bocor Samar",
-    desc: "Ongkir melewati batas toleransi model",
     weight: 2.2,
     distance: 280,
     length: 30,
@@ -100,7 +88,6 @@ const PRESET_SCENARIOS = [
     height: 15,
     price: 95.0,
     actualFreight: 48.0,
-    theme: "amber",
   },
 ];
 
@@ -128,35 +115,34 @@ export default function ProfitLeakDashboard() {
   const [price, setPrice] = useState<number>(49.9);
   const [actualFreight, setActualFreight] = useState<number>(14.5);
 
-  // Status & Logic
+  // Status State
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [showModelModal, setShowModelModal] = useState<boolean>(false);
 
-  // Volume terhitung otomatis
+  // Volume terhitung
   const volumeCm3 = useMemo(() => {
     return Math.max(1, Math.round(lengthCm * widthCm * heightCm));
   }, [lengthCm, widthCm, heightCm]);
 
-  // Validasi batas dataset Olist
+  // Validasi input
   const validationWarnings = useMemo(() => {
     const list: string[] = [];
     if (weightKg < VALID_RANGES.weight_kg.min || weightKg > VALID_RANGES.weight_kg.max) {
-      list.push(`Berat (${weightKg} kg) di luar rentang 0.05 - 30 kg`);
+      list.push(`Berat (${weightKg} kg) di luar rentang latih 0.05 - 30 kg`);
     }
     if (distanceKm < VALID_RANGES.distance_km.min || distanceKm > VALID_RANGES.distance_km.max) {
-      list.push(`Jarak (${distanceKm} km) di luar rentang 1.5 - 3.135 km`);
+      list.push(`Jarak (${distanceKm} km) di luar rentang latih 1.5 - 3.135 km`);
     }
     if (volumeCm3 < VALID_RANGES.volume_cm3.min || volumeCm3 > VALID_RANGES.volume_cm3.max) {
-      list.push(`Volume (${volumeCm3.toLocaleString()} cm³) di luar rentang 352 - 244.608 cm³`);
+      list.push(`Volume (${volumeCm3.toLocaleString()} cm³) di luar rentang normal`);
     }
     if (price < VALID_RANGES.price.min || price > VALID_RANGES.price.max) {
-      list.push(`Harga (R$ ${price}) di luar rentang R$ 4.99 - 2.110`);
+      list.push(`Harga (R$ ${price}) di luar rentang data`);
     }
     return list;
   }, [weightKg, distanceKm, volumeCm3, price]);
 
-  // Model v5 Prediction Engine (Lokal / Fallback)
+  // Model Engine v5
   const computePrediction = (
     w: number,
     dist: number,
@@ -181,9 +167,9 @@ export default function ProfitLeakDashboard() {
     let message = "Biaya pengiriman sesuai dengan estimasi tarif wajar logistik e-commerce.";
     if (isLeak) {
       if (ratio >= 3.5) {
-        message = "Kebocoran profit kritis! Tarif ongkir ditagihkan kurir jauh melebihi tarif wajar.";
+        message = "Kebocoran profit kritis. Tarif ongkir ditagihkan jauh melebihi tarif wajar kurir.";
       } else {
-        message = "Terindikasi markup / kebocoran profit logistik di atas ambang toleransi residual model.";
+        message = "Terindikasi markup biaya logistik melebihi batas toleransi residual model.";
       }
     }
 
@@ -201,7 +187,7 @@ export default function ProfitLeakDashboard() {
     };
   };
 
-  // Jalankan analisis (API atau Simulasi Engine v5)
+  // Jalankan Analisis
   const runAnalysis = async () => {
     setLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -245,29 +231,28 @@ export default function ProfitLeakDashboard() {
           message:
             data.message ||
             (leak
-              ? "Terdeteksi kebocoran profit pada biaya ongkir!"
+              ? "Terdeteksi kebocoran profit pada biaya ongkir."
               : "Tarif ongkir normal sesuai model prediksi."),
         });
         setLoading(false);
         return;
       }
     } catch {
-      // Backend offline: gunakan engine v5 lokal
+      // Backend offline: fallback ke engine lokal
     }
 
-    // Engine v5 lokal instant
     const computed = computePrediction(weightKg, distanceKm, volumeCm3, price, actualFreight);
     setResult(computed);
     setLoading(false);
   };
 
-  // Auto-run kalkulasi saat awal dimuat agar dashboard langsung terisi rapi
+  // Inisialisasi awal
   useEffect(() => {
     const initial = computePrediction(weightKg, distanceKm, volumeCm3, price, actualFreight);
     setResult(initial);
   }, []);
 
-  // Terapkan Preset
+  // Pilih preset
   const handleSelectPreset = (p: (typeof PRESET_SCENARIOS)[0]) => {
     setSelectedPreset(p.id);
     setWeightKg(p.weight);
@@ -283,162 +268,101 @@ export default function ProfitLeakDashboard() {
     setResult(computed);
   };
 
-  // Data Visualisasi Recharts
+  // Data Chart (Monokrom Minimalis)
   const chartData = useMemo(() => {
     if (!result) return [];
     return [
       {
         name: "Tarif Wajar (AI)",
         amount: result.predictedRate,
-        fill: "#10b981", // emerald
+        fill: "#ffffff", // Aksen Putih Bersih
       },
       {
         name: "Ongkir Ditagihkan",
         amount: result.actualRate,
-        fill: result.isLeak ? "#f43f5e" : "#3b82f6", // rose / blue
+        fill: result.isLeak ? "#f87171" : "#71717a", // Merah lembut jika bocor, abu-abu netral jika normal
       },
     ];
   }, [result]);
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Background Ambient Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-cyan-600/10 blur-[120px]" />
-        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-blue-600/10 blur-[140px]" />
-      </div>
-
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#070b14]/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 antialiased selection:bg-white/20 selection:text-white">
+      {/* Navbar Minimalis */}
+      <header className="border-b border-white/[0.08] bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/20 text-white">
-              <ShieldAlert className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-zinc-950 font-bold text-sm shadow-sm">
+              PL
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-white">
-                  ProfitLeak<span className="text-cyan-400">AI</span>
+                <span className="text-sm font-semibold tracking-tight text-white">
+                  ProfitLeak <span className="text-zinc-400 font-normal">AI</span>
                 </span>
-                <span className="rounded-md bg-cyan-950/90 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-300 border border-cyan-800/50">
+                <span className="rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.2 text-[10px] text-zinc-300">
                   Model v5
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                Deteksi Anomali Ongkir & Kebocoran Biaya Logistik E-Commerce
+              <p className="text-[11px] text-zinc-500 hidden sm:block">
+                Deteksi Kebocoran Biaya Logistik E-Commerce
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 rounded-lg bg-slate-900/90 border border-slate-800 px-2.5 py-1 text-[11px] text-slate-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>R²: 72.3% • FPR: 0.17%</span>
-            </div>
-
-            <button
-              onClick={() => setShowModelModal(!showModelModal)}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition"
-            >
-              <Info className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Info Model</span>
-            </button>
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="font-mono text-[11px]">R²: 72.3% • FPR: 0.17%</span>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 space-y-4">
-        {/* Preset Selector Bar (Compact Chips) */}
-        <div className="rounded-xl border border-slate-800/80 bg-slate-900/40 p-2.5 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 pl-1">
-              <Sliders className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Preset Kasus Nyata:</span>
-            </div>
+      {/* Konten Utama */}
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 space-y-4">
+        {/* Preset Selector Bar (Segmented Control Bersih) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-zinc-900/40 p-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 pl-1">
+            <Sliders className="h-3.5 w-3.5 text-zinc-300" />
+            <span>Preset Skenario:</span>
+          </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full sm:w-auto">
-              {PRESET_SCENARIOS.map((p) => {
-                const isActive = selectedPreset === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => handleSelectPreset(p)}
-                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {PRESET_SCENARIOS.map((p) => {
+              const isActive = selectedPreset === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectPreset(p)}
+                  className={`flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs transition-all ${
+                    isActive
+                      ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                      : "bg-transparent text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <span>{p.name}</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
                       isActive
-                        ? "bg-cyan-500/15 border border-cyan-500/50 text-cyan-300 shadow-sm"
-                        : "bg-slate-900/80 border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                        ? "bg-zinc-900 text-white"
+                        : "bg-white/[0.06] text-zinc-400"
                     }`}
                   >
-                    <span className="truncate">{p.name}</span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
-                        p.theme === "red"
-                          ? "bg-rose-950 text-rose-300 border border-rose-800/60"
-                          : p.theme === "emerald"
-                          ? "bg-emerald-950 text-emerald-300 border border-emerald-800/60"
-                          : p.theme === "blue"
-                          ? "bg-blue-950 text-blue-300 border border-blue-800/60"
-                          : "bg-amber-950 text-amber-300 border border-amber-800/60"
-                      }`}
-                    >
-                      {p.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {p.badge}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Modal Info Model v5 (Jika Diaktifkan) */}
-        {showModelModal && (
-          <div className="rounded-xl border border-cyan-900/50 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-4 text-xs text-slate-300 shadow-xl">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <div className="flex items-center gap-2 font-semibold text-white">
-                <Sparkles className="h-4 w-4 text-cyan-400" />
-                Spesifikasi Model Final v5 (Olist Dataset Benchmark)
-              </div>
-              <button
-                onClick={() => setShowModelModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
-              <div>
-                <span className="text-slate-400">Arsitektur:</span>
-                <p className="font-semibold text-cyan-300">HistGradientBoosting</p>
-              </div>
-              <div>
-                <span className="text-slate-400">Threshold Anomali:</span>
-                <p className="font-semibold text-amber-300">1.1023 (Quantile 99.8%)</p>
-              </div>
-              <div>
-                <span className="text-slate-400">Proteksi Pergeseran:</span>
-                <p className="font-semibold text-purple-300">Drift Correction Active</p>
-              </div>
-              <div>
-                <span className="text-slate-400">Metrik Uji:</span>
-                <p className="font-semibold text-emerald-300">R² = 72.3%, FPR = 0.17%</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2-Column Dashboard Grid */}
+        {/* Dashboard Grid 2-Kolom Seimbang */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* KOLOM KIRI: Form Parameter (5 Kolom) */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-[#0c1220]/90 p-5 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800/80">
-              <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-cyan-400" />
-                <h2 className="text-sm font-semibold text-white">Parameter Transaksi</h2>
-              </div>
-              <span className="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                Fitur Input
-              </span>
+          {/* KOLOM KIRI: Parameter Form (5 Kolom) */}
+          <div className="lg:col-span-5 rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-5 backdrop-blur-sm">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.08]">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                Parameter Transaksi
+              </h2>
+              <span className="text-[10px] text-zinc-500 font-mono">Input Data</span>
             </div>
 
             <form
@@ -451,12 +375,12 @@ export default function ProfitLeakDashboard() {
               {/* Row 1: Berat & Jarak */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
                     <label className="flex items-center gap-1">
-                      <Scale className="h-3 w-3 text-cyan-400" />
+                      <Scale className="h-3 w-3 text-zinc-300" />
                       Berat (kg)
                     </label>
-                    <span className="text-[10px] text-slate-400">0.05-30kg</span>
+                    <span className="text-[10px] text-zinc-500">0.05-30</span>
                   </div>
                   <div className="relative">
                     <input
@@ -466,20 +390,20 @@ export default function ProfitLeakDashboard() {
                       max="100"
                       value={weightKg}
                       onChange={(e) => setWeightKg(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
                       required
                     />
-                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400">kg</span>
+                    <span className="absolute right-2.5 top-1.5 text-[10px] text-zinc-500">kg</span>
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
                     <label className="flex items-center gap-1">
-                      <Navigation className="h-3 w-3 text-cyan-400" />
+                      <Navigation className="h-3 w-3 text-zinc-300" />
                       Jarak (km)
                     </label>
-                    <span className="text-[10px] text-slate-400">1.5-3.135km</span>
+                    <span className="text-[10px] text-zinc-500">1.5-3.135</span>
                   </div>
                   <div className="relative">
                     <input
@@ -489,23 +413,23 @@ export default function ProfitLeakDashboard() {
                       max="6000"
                       value={distanceKm}
                       onChange={(e) => setDistanceKm(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 px-2.5 py-1.5 text-xs font-medium text-white focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
                       required
                     />
-                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400">km</span>
+                    <span className="absolute right-2.5 top-1.5 text-[10px] text-zinc-500">km</span>
                   </div>
                 </div>
               </div>
 
-              {/* Row 2: Dimensi Paket & Volume Terhitung */}
+              {/* Row 2: Dimensi & Volume */}
               <div>
-                <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+                <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
                   <label className="flex items-center gap-1">
-                    <Maximize2 className="h-3 w-3 text-cyan-400" />
+                    <Maximize2 className="h-3 w-3 text-zinc-300" />
                     Dimensi (P × L × T cm)
                   </label>
-                  <span className="text-cyan-400 font-mono text-[10px]">
-                    Vol: {volumeCm3.toLocaleString()} cm³
+                  <span className="text-zinc-300 font-mono text-[10px]">
+                    {volumeCm3.toLocaleString()} cm³
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -515,9 +439,9 @@ export default function ProfitLeakDashboard() {
                       min="1"
                       value={lengthCm}
                       onChange={(e) => setLengthCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-cyan-500 focus:outline-none"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 px-2 py-1.5 text-center text-xs text-white focus:border-white/40 focus:outline-none"
                     />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">P</span>
+                    <span className="absolute right-1.5 top-1.5 text-[9px] text-zinc-500">P</span>
                   </div>
                   <div className="relative">
                     <input
@@ -525,9 +449,9 @@ export default function ProfitLeakDashboard() {
                       min="1"
                       value={widthCm}
                       onChange={(e) => setWidthCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-cyan-500 focus:outline-none"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 px-2 py-1.5 text-center text-xs text-white focus:border-white/40 focus:outline-none"
                     />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">L</span>
+                    <span className="absolute right-1.5 top-1.5 text-[9px] text-zinc-500">L</span>
                   </div>
                   <div className="relative">
                     <input
@@ -535,75 +459,75 @@ export default function ProfitLeakDashboard() {
                       min="1"
                       value={heightCm}
                       onChange={(e) => setHeightCm(parseFloat(e.target.value) || 1)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 px-2 py-1.5 text-center text-xs text-white focus:border-cyan-500 focus:outline-none"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 px-2 py-1.5 text-center text-xs text-white focus:border-white/40 focus:outline-none"
                     />
-                    <span className="absolute right-1.5 top-1.5 text-[9px] text-slate-400">T</span>
+                    <span className="absolute right-1.5 top-1.5 text-[9px] text-zinc-500">T</span>
                   </div>
                 </div>
               </div>
 
-              {/* Row 3: Harga Barang & Tagihan Ongkir Aktual */}
+              {/* Row 3: Harga Barang & Ongkir Ditagih */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-1">
                     <label className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-cyan-400" />
+                      <DollarSign className="h-3 w-3 text-zinc-300" />
                       Harga Barang
                     </label>
-                    <span className="text-[10px] text-slate-400">BRL</span>
+                    <span className="text-[10px] text-zinc-500">BRL</span>
                   </div>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-[10px] text-slate-400">R$</span>
+                    <span className="absolute left-2.5 top-1.5 text-[10px] text-zinc-500">R$</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0.1"
                       value={price}
                       onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-slate-700/80 bg-slate-950 pl-7 pr-2.5 py-1.5 text-xs font-medium text-white focus:border-cyan-500 focus:outline-none"
+                      className="w-full rounded-lg border border-white/10 bg-zinc-950 pl-7 pr-2.5 py-1.5 text-xs font-medium text-white focus:border-white/40 focus:outline-none"
                       required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between text-[11px] text-amber-300 mb-1">
-                    <label className="flex items-center gap-1 font-semibold">
-                      <AlertTriangle className="h-3 w-3 text-amber-400" />
+                  <div className="flex items-center justify-between text-[11px] text-zinc-300 mb-1">
+                    <label className="flex items-center gap-1 font-medium">
+                      <AlertTriangle className="h-3 w-3 text-zinc-400" />
                       Ongkir Ditagih
                     </label>
-                    <span className="text-[10px] text-amber-400/80">Kurir</span>
+                    <span className="text-[10px] text-zinc-500">Kurir</span>
                   </div>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1.5 text-[10px] font-bold text-amber-400">R$</span>
+                    <span className="absolute left-2.5 top-1.5 text-[10px] font-semibold text-zinc-400">R$</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0.01"
                       value={actualFreight}
                       onChange={(e) => setActualFreight(parseFloat(e.target.value) || 0)}
-                      className="w-full rounded-lg border border-amber-500/60 bg-slate-950 pl-7 pr-2.5 py-1.5 text-xs font-bold text-amber-200 focus:border-amber-400 focus:outline-none"
+                      className="w-full rounded-lg border border-white/20 bg-zinc-950 pl-7 pr-2.5 py-1.5 text-xs font-bold text-white focus:border-white focus:outline-none"
                       required
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Warning box if input is out of bounds */}
+              {/* Peringatan Out-of-Distribution */}
               {validationWarnings.length > 0 && (
-                <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 p-2 text-[10px] text-amber-300/90 space-y-0.5">
-                  <div className="font-semibold text-amber-200">Perhatian Batas Data Latih:</div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2 text-[10px] text-zinc-400 space-y-0.5">
+                  <div className="font-semibold text-zinc-300">Catatan Batas Data Latih:</div>
                   {validationWarnings.map((w, idx) => (
                     <div key={idx}>• {w}</div>
                   ))}
                 </div>
               )}
 
-              {/* Submit CTA */}
+              {/* Tombol Aksi Putih Bersih (Signature Accent) */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 py-2.5 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-50"
+                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-white text-zinc-950 font-semibold py-2.5 text-xs shadow-sm transition hover:bg-zinc-200 active:scale-[0.99] disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -612,152 +536,148 @@ export default function ProfitLeakDashboard() {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Analisis Kebocoran Tarif Ongkir
+                    <span>Analisis Kebocoran Tarif Ongkir</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </>
                 )}
               </button>
             </form>
           </div>
 
-          {/* KOLOM KANAN: Hasil Analisis & Visualisasi Recharts (7 Kolom) */}
+          {/* KOLOM KANAN: Hasil Evaluasi & Grafik (7 Kolom) */}
           <div className="lg:col-span-7 space-y-4">
             {result ? (
               <>
-                {/* 1. Status Banner Card (Sleek & Prominent) */}
+                {/* 1. Status Evaluasi Utama */}
                 <div
-                  className={`relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 shadow-xl backdrop-blur-sm ${
+                  className={`rounded-2xl border p-4.5 transition-all backdrop-blur-sm ${
                     result.isLeak
-                      ? "border-rose-500/50 bg-gradient-to-br from-rose-950/50 via-[#101424] to-[#0a0f1d] text-rose-100"
-                      : "border-emerald-500/50 bg-gradient-to-br from-emerald-950/40 via-[#101424] to-[#0a0f1d] text-emerald-100"
+                      ? "border-red-500/30 bg-red-950/10 text-white"
+                      : "border-white/[0.08] bg-zinc-900/50 text-white"
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
                           result.isLeak
-                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                            : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            ? "border-red-500/30 bg-red-500/10 text-red-400"
+                            : "border-white/20 bg-white/10 text-white"
                         }`}
                       >
                         {result.isLeak ? (
-                          <ShieldAlert className="h-6 w-6" />
+                          <ShieldAlert className="h-5 w-5" />
                         ) : (
-                          <ShieldCheck className="h-6 w-6" />
+                          <ShieldCheck className="h-5 w-5" />
                         )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                            Evaluasi Model v5
+                          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">
+                            Status Analisis
                           </span>
                           <span
-                            className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                            className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
                               result.isLeak
-                                ? "bg-rose-500 text-white"
-                                : "bg-emerald-500 text-slate-950"
+                                ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                                : "bg-white/10 text-white border border-white/20"
                             }`}
                           >
                             {result.isLeak ? "TERINDIKASI BOCOR" : "TARIF NORMAL"}
                           </span>
                         </div>
-                        <h3 className="text-base font-bold text-white mt-0.5">
+                        <h3 className="text-base font-semibold text-white mt-0.5">
                           {result.isLeak
-                            ? "Terdeteksi Kebocoran Biaya Logistik!"
-                            : "Tarif Ongkir Sesuai Standar Wajar"}
+                            ? "Terdeteksi Kebocoran Biaya Logistik"
+                            : "Tarif Logistik Sesuai Estimasi Wajar"}
                         </h3>
                       </div>
                     </div>
 
-                    <span className="text-[10px] text-slate-400 bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800">
-                      {result.source === "api" ? "FastAPI Live" : "Engine v5 Engine"}
+                    <span className="text-[10px] text-zinc-400 bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.08] font-mono">
+                      {result.source === "api" ? "FastAPI" : "Engine v5"}
                     </span>
                   </div>
 
-                  <p className="mt-2.5 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-2">
+                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed border-t border-white/[0.06] pt-2">
                     {result.message}
                   </p>
 
-                  {/* Kerugian Profit */}
+                  {/* Estimasi Selisih Kerugian (Hanya jika bocor) */}
                   {result.isLeak && (
-                    <div className="mt-2.5 flex items-center justify-between rounded-lg bg-rose-950/70 border border-rose-700/50 px-3 py-2">
-                      <span className="text-[11px] text-rose-200 flex items-center gap-1.5 font-medium">
-                        <TrendingUp className="h-3.5 w-3.5 text-rose-400" />
-                        Estimasi Kebocoran / Transaksi:
+                    <div className="mt-2.5 flex items-center justify-between rounded-lg bg-red-500/[0.08] border border-red-500/20 px-3 py-2">
+                      <span className="text-[11px] text-zinc-300 flex items-center gap-1.5 font-medium">
+                        <TrendingUp className="h-3.5 w-3.5 text-red-400" />
+                        Estimasi Selisih Kebocoran:
                       </span>
-                      <span className="text-sm font-extrabold text-rose-300">
+                      <span className="text-sm font-bold font-mono text-red-300">
                         R$ {result.potentialLoss.toFixed(2)} BRL
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* 2. Key Metrics 4-Box Grid */}
+                {/* 2. Empat Metrik Kunci (Simetris & Minimalis) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="rounded-xl border border-slate-800 bg-[#0c1220]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Ongkir Wajar (AI)</span>
-                    <p className="mt-0.5 text-base font-bold text-emerald-400">
+                  <div className="rounded-xl border border-white/[0.08] bg-zinc-900/40 p-3">
+                    <span className="text-[10px] text-zinc-400">Ongkir Wajar (AI)</span>
+                    <p className="mt-0.5 text-base font-bold font-mono text-white">
                       R$ {result.predictedRate.toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-slate-400">Baseline Model</span>
+                    <span className="text-[9px] text-zinc-500">Baseline Model</span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0c1220]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Ongkir Ditagihkan</span>
+                  <div className="rounded-xl border border-white/[0.08] bg-zinc-900/40 p-3">
+                    <span className="text-[10px] text-zinc-400">Ongkir Ditagihkan</span>
                     <p
-                      className={`mt-0.5 text-base font-bold ${
-                        result.isLeak ? "text-rose-400" : "text-slate-100"
+                      className={`mt-0.5 text-base font-bold font-mono ${
+                        result.isLeak ? "text-red-400" : "text-white"
                       }`}
                     >
                       R$ {result.actualRate.toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-slate-400">Invoice Kurir</span>
+                    <span className="text-[9px] text-zinc-500">Invoice Kurir</span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0c1220]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Rasio Tagihan/Wajar</span>
+                  <div className="rounded-xl border border-white/[0.08] bg-zinc-900/40 p-3">
+                    <span className="text-[10px] text-zinc-400">Rasio Tagihan/Wajar</span>
                     <p
-                      className={`mt-0.5 text-base font-bold ${
-                        result.ratio > 2.0
-                          ? "text-rose-400"
-                          : result.ratio > 1.2
-                          ? "text-amber-400"
-                          : "text-cyan-400"
+                      className={`mt-0.5 text-base font-bold font-mono ${
+                        result.ratio > 2.0 ? "text-red-400" : "text-white"
                       }`}
                     >
                       {result.ratio}x
                     </p>
-                    <span className="text-[9px] text-slate-400">
-                      {result.ratio > 1 ? "Lebih mahal" : "Proporsional"}
+                    <span className="text-[9px] text-zinc-500">
+                      {result.ratio > 1 ? "Lebih tinggi" : "Normal"}
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-[#0c1220]/80 p-3">
-                    <span className="text-[10px] text-slate-400">Residual vs Threshold</span>
+                  <div className="rounded-xl border border-white/[0.08] bg-zinc-900/40 p-3">
+                    <span className="text-[10px] text-zinc-400">Residual vs Threshold</span>
                     <p
-                      className={`mt-0.5 text-base font-bold ${
-                        result.residual > result.threshold ? "text-rose-400" : "text-emerald-400"
+                      className={`mt-0.5 text-base font-bold font-mono ${
+                        result.residual > result.threshold ? "text-red-400" : "text-white"
                       }`}
                     >
                       {result.residual}
                     </p>
-                    <span className="text-[9px] text-slate-400">
+                    <span className="text-[9px] text-zinc-500">
                       Ambang: {result.threshold.toFixed(2)}
                     </span>
                   </div>
                 </div>
 
-                {/* 3. Visualisasi Recharts (Perbandingan Bersih) */}
-                <div className="rounded-2xl border border-slate-800 bg-[#0c1220]/80 p-4">
+                {/* 3. Komparasi Bar Chart Bersih (Aksen Putih) */}
+                <div className="rounded-2xl border border-white/[0.08] bg-zinc-900/40 p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <h4 className="text-xs font-semibold text-white flex items-center gap-1.5">
-                        <BarChart3 className="h-3.5 w-3.5 text-cyan-400" />
+                        <BarChart3 className="h-3.5 w-3.5 text-zinc-300" />
                         Komparasi Nilai Ongkir (BRL)
                       </h4>
-                      <p className="text-[10px] text-slate-400">
-                        Perbandingan tarif wajar rekomendasi AI vs ongkir yang ditagih
+                      <p className="text-[10px] text-zinc-500">
+                        Perbandingan tarif wajar rekomendasi AI vs ongkir yang ditagihkan
                       </p>
                     </div>
                   </div>
@@ -767,36 +687,32 @@ export default function ProfitLeakDashboard() {
                       <BarChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                         <XAxis
                           dataKey="name"
-                          tick={{ fill: "#94a3b8", fontSize: 11 }}
-                          axisLine={{ stroke: "#1e293b" }}
+                          tick={{ fill: "#a1a1aa", fontSize: 11 }}
+                          axisLine={{ stroke: "#27272a" }}
                           tickLine={false}
                         />
                         <YAxis
-                          tick={{ fill: "#94a3b8", fontSize: 10 }}
-                          axisLine={{ stroke: "#1e293b" }}
+                          tick={{ fill: "#71717a", fontSize: 10 }}
+                          axisLine={{ stroke: "#27272a" }}
                           tickLine={false}
                           unit=" R$"
                         />
                         <Tooltip
-                          cursor={{ fill: "rgba(255, 255, 255, 0.04)", radius: 6 }}
+                          cursor={{ fill: "rgba(255, 255, 255, 0.03)", radius: 6 }}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const item = payload[0];
                               const isActual = item.payload.name === "Ongkir Ditagihkan";
                               return (
-                                <div className="rounded-xl border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs shadow-2xl backdrop-blur-md">
-                                  <div className="font-semibold text-slate-200">
+                                <div className="rounded-xl border border-white/20 bg-zinc-950 px-3 py-2 text-xs shadow-2xl">
+                                  <div className="font-semibold text-white">
                                     {item.payload.name}
                                   </div>
                                   <div className="mt-1 flex items-center gap-2">
-                                    <span className="text-slate-400">Nilai:</span>
+                                    <span className="text-zinc-400">Nilai:</span>
                                     <span
-                                      className={`font-bold ${
-                                        isActual && result.isLeak
-                                          ? "text-rose-400"
-                                          : isActual
-                                          ? "text-blue-400"
-                                          : "text-emerald-400"
+                                      className={`font-bold font-mono ${
+                                        isActual && result.isLeak ? "text-red-400" : "text-white"
                                       }`}
                                     >
                                       R$ {Number(item.value).toFixed(2)} BRL
@@ -810,11 +726,11 @@ export default function ProfitLeakDashboard() {
                         />
                         <ReferenceLine
                           y={result.predictedRate}
-                          stroke="#10b981"
+                          stroke="#ffffff"
                           strokeDasharray="3 3"
                           label={{
                             value: "Batas Wajar",
-                            fill: "#10b981",
+                            fill: "#ffffff",
                             position: "insideTopRight",
                             fontSize: 10,
                           }}
@@ -830,24 +746,24 @@ export default function ProfitLeakDashboard() {
                 </div>
 
                 {/* 4. Rekomendasi Audit */}
-                <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-3 text-[11px] text-slate-300">
+                <div className="rounded-xl border border-white/[0.08] bg-zinc-900/30 p-3 text-[11px] text-zinc-300">
                   <div className="font-semibold text-white flex items-center gap-1.5 mb-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
-                    Rekomendasi Tindak Lanjut Logistik:
+                    <CheckCircle2 className="h-3.5 w-3.5 text-zinc-300" />
+                    Rekomendasi Tindak Lanjut:
                   </div>
                   {result.isLeak ? (
-                    <p className="text-slate-400 leading-relaxed">
-                      Lakukan audit terhadap vendor kurir untuk rute pengiriman {distanceKm} km.
-                      Potensi penghematan biaya logistik sebesar{" "}
-                      <strong className="text-rose-400">
+                    <p className="text-zinc-400 leading-relaxed">
+                      Lakukan evaluasi terhadap tagihan vendor kurir untuk rute pengiriman {distanceKm} km.
+                      Potensi penghematan biaya sebesar{" "}
+                      <strong className="text-white font-mono">
                         R$ {result.potentialLoss.toFixed(2)} BRL
                       </strong>{" "}
-                      dapat diajukan sebagai klaim penyesuaian tagihan.
+                      dapat diajukan sebagai klaim penyesuaian tarif.
                     </p>
                   ) : (
-                    <p className="text-slate-400 leading-relaxed">
-                      Nilai residual berada pada rentang normal di bawah ambang batas toleransi.
-                      Transaksi ini efisien dan tidak memerlukan audit manual.
+                    <p className="text-zinc-400 leading-relaxed">
+                      Nilai residual berada pada rentang wajar di bawah ambang batas toleransi.
+                      Transaksi logistik ini efisien dan tidak memerlukan tinjauan manual.
                     </p>
                   )}
                 </div>
@@ -857,9 +773,9 @@ export default function ProfitLeakDashboard() {
         </div>
       </main>
 
-      {/* Clean Compact Footer */}
-      <footer className="mt-8 border-t border-slate-900 bg-[#070b14] py-3 text-center text-[11px] text-slate-400">
-        ProfitLeak AI • Tim 5 Orang Hackathon 2026 • Area UI Ihqfal (feat/ihqfal-ui)
+      {/* Footer Bersih */}
+      <footer className="mt-8 border-t border-white/[0.06] bg-[#09090b] py-4 text-center text-[11px] text-zinc-500">
+        ProfitLeak AI • Tim 5 Orang Hackathon 2026 • Area UI Ihqfal (branch: ihqfal)
       </footer>
     </div>
   );
