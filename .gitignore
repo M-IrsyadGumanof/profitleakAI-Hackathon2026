@@ -48,3 +48,6 @@ dist/
 # Catatan kerja internal / pembagian tugas per fitur (tidak di-commit)
 pembagian_tugas_*.txt
 
+# Manual Book / Panduan Pengguna (dokumen lokal, tidak di-commit)
+docs/MANUAL_BOOK.md
+
